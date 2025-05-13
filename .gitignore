@@ -13,6 +13,12 @@ dist
 dist-ssr
 coverage
 *.local
+assets
+__pycache__
+*.pyc
+venv
+staticfiles
+*.sqlite3
 
 /cypress/videos/
 /cypress/screenshots/

@@ -22,9 +22,9 @@
           </div>
         </div>
         <div class="md:w-1/2 flex justify-center md:justify-end">
-          <!-- Изображение собаки и кошки -->
-          <img src="https://via.placeholder.com/400x300/cccccc/888888?text=Dog+and+Cat" alt="Собака и кошка" class="max-w-xs md:max-w-md rounded-lg shadow-lg">
-        </div>
+           <!-- Замените на ваш реальный путь к статическому изображению, если оно есть -->
+           <img src="/images/hero-pets.png" alt="Собака и кошка" class="max-w-xs md:max-w-md rounded-lg shadow-lg">
+         </div>
       </div>
     </section>
 
@@ -37,18 +37,22 @@
             Посмотреть все >
           </a>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <!-- Пример карточки объявления (повторить 4 раза) -->
+        <div v-if="loading" class="text-center text-gray-500">Загрузка объявлений...</div>
+        <div v-else-if="recentAds.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <AdCard
             v-for="ad in recentAds"
             :key="ad.id"
-            :image-url="ad.imageUrl"
+            :image-url="ad.first_photo_url || 'https://via.placeholder.com/300x200/cccccc/888888?text=No+Photo'"
             :title="ad.title"
-            :description="ad.description"
+            :description="ad.short_description"
             :location="ad.location"
-            :time-ago="ad.timeAgo"
+            :time-ago="formatTimeAgo(ad.publication_date)"
           />
         </div>
+        <div v-else-if="!loading && recentAds.length === 0" class="text-center text-gray-500">
+            Нет доступных объявлений.
+        </div>
+        <div v-if="error" class="text-center text-red-500 mt-4">{{ error }}</div>
       </div>
     </section>
 
@@ -61,33 +65,50 @@
             Посмотреть все >
           </a>
         </div>
-        <div class="flex flex-col lg:flex-row gap-8">
+        <div v-if="loading" class="text-center text-gray-500">Загрузка статей...</div>
+        <div v-else-if="mainArticle || sideArticles.length > 0" class="flex flex-col lg:flex-row gap-8">
           <!-- Большая статья слева -->
-          <div class="lg:w-2/3">
+          <div v-if="mainArticle" class="lg:w-2/3">
             <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-              <img src="https://via.placeholder.com/800x400/cccccc/888888?text=Main+Article+Cat" alt="Как закапать глаза кошке" class="w-full h-64 object-cover">
+              <img
+                :src="mainArticle.main_image_url || 'https://via.placeholder.com/800x400/cccccc/888888?text=Article'"
+                :alt="mainArticle.title"
+                class="w-full h-64 object-cover"
+              >
               <div class="p-6">
-                <h3 class="text-2xl font-semibold text-gray-800 mb-2">Как закапать глаза кошке</h3>
-                <p class="text-gray-600 mb-4">Как закапать глаза кошке: порядок лечения, подготовка, пошаговое описание процедуры и побочные эффекты.</p>
-                <span class="text-sm text-gray-500">11 месяцев назад</span>
+                <h3 class="text-2xl font-semibold text-gray-800 mb-2">{{ mainArticle.title }}</h3>
+                <p class="text-gray-600 mb-4">{{ mainArticle.excerpt }}</p>
+                <span class="text-sm text-gray-500">{{ formatTimeAgo(mainArticle.publication_date) }}</span>
               </div>
             </div>
           </div>
+           <div v-else-if="!mainArticle && sideArticles.length === 0 && !loading" class="lg:w-2/3 text-center text-gray-500">
+              Нет главной статьи для отображения.
+          </div>
+
           <!-- Маленькие статьи справа -->
-          <div class="lg:w-1/3 space-y-6">
+          <div v-if="sideArticles.length > 0" class="lg:w-1/3 space-y-6">
             <ArticleCard
               v-for="article in sideArticles"
               :key="article.id"
-              :image-url="article.imageUrl"
+              :image-url="article.main_image_url || 'https://via.placeholder.com/400x250/cccccc/888888?text=Article'"
               :title="article.title"
-              :description="article.description"
-              :time-ago="article.timeAgo"
+              :description="article.excerpt"
+              :time-ago="formatTimeAgo(article.publication_date)"
             />
           </div>
+           <div v-else-if="sideArticles.length === 0 && !mainArticle && !loading" class="lg:w-1/3 text-center text-gray-500">
+              Нет дополнительных статей.
+          </div>
         </div>
+         <div v-else-if="!loading && !mainArticle && sideArticles.length === 0" class="text-center text-gray-500">
+            Нет доступных статей.
+        </div>
+        <div v-if="error" class="text-center text-red-500 mt-4">{{ error }}</div>
       </div>
     </section>
 
+    <!-- ... (остальные секции: Приюты, Партнеры - пока без изменений) ... -->
     <!-- 4. Приюты -->
     <section class="py-12 md:py-16 bg-white">
       <div class="container mx-auto px-4">
@@ -105,8 +126,7 @@
             </button>
           </div>
           <div class="lg:w-1/2">
-            <!-- Карта (пока плейсхолдер) -->
-            <img src="https://via.placeholder.com/600x400/eeeeee/999999?text=Interactive+Map+Placeholder" alt="Карта приютов" class="w-full rounded-lg shadow-md">
+            <img src="/images/map-placeholder.png" alt="Карта приютов" class="w-full rounded-lg shadow-md">
           </div>
         </div>
       </div>
@@ -115,41 +135,102 @@
     <!-- 5. Партнеры (Спонсоры) -->
     <section class="py-12 bg-gray-100">
       <div class="container mx-auto px-4">
+        <!-- Замените src на пути к вашим реальным логотипам в public/images/partners/ -->
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 items-center justify-items-center">
-          <img src="https://via.placeholder.com/150x60/cccccc/888888?text=Purina" alt="Purina" class="h-12 md:h-16 opacity-70 hover:opacity-100 transition-opacity">
-          <img src="https://via.placeholder.com/150x60/cccccc/888888?text=Приют+Бирюлево" alt="Приют Бирюлево" class="h-12 md:h-16 opacity-70 hover:opacity-100 transition-opacity">
-          <img src="https://via.placeholder.com/150x60/cccccc/888888?text=drug-sobaka.ru" alt="Drug Sobaka" class="h-12 md:h-16 opacity-70 hover:opacity-100 transition-opacity">
-          <img src="https://via.placeholder.com/150x60/cccccc/888888?text=Друг+для+друга" alt="Друг для друга" class="h-12 md:h-16 opacity-70 hover:opacity-100 transition-opacity">
-          <img src="https://via.placeholder.com/150x60/cccccc/888888?text=Искра" alt="Искра" class="h-12 md:h-16 opacity-70 hover:opacity-100 transition-opacity col-span-2 md:col-span-1 lg:col-auto justify-self-center">
+          <img src="/images/partners/purina.png" alt="Purina" class="h-10 md:h-12 opacity-70 hover:opacity-100 transition-opacity">
+          <img src="/images/partners/birulevo.png" alt="Приют Бирюлево" class="h-10 md:h-12 opacity-70 hover:opacity-100 transition-opacity">
+          <img src="/images/partners/drug-sobaka.png" alt="Drug Sobaka" class="h-10 md:h-12 opacity-70 hover:opacity-100 transition-opacity">
+          <img src="/images/partners/drug-dlya-druga.png" alt="Друг для друга" class="h-10 md:h-12 opacity-70 hover:opacity-100 transition-opacity">
+          <img src="/images/partners/iskra.png" alt="Искра" class="h-10 md:h-12 opacity-70 hover:opacity-100 transition-opacity col-span-2 md:col-span-1 lg:col-auto justify-self-center">
         </div>
       </div>
     </section>
-
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import axios from 'axios'; // Убедитесь, что axios установлен: npm install axios
 import AdCard from '../components/AdCard.vue';
 import ArticleCard from '../components/ArticleCard.vue';
 
-// Placeholder data - будет заменено данными из API
-const recentAds = ref([
-  { id: 1, imageUrl: 'https://via.placeholder.com/300x200/cccccc/888888?text=Dog+1', title: 'Найдена собака, отз...', description: 'На северном жилом массиве г. Ростов-на-Дону найден чёрный кобель, был в шлейке, ухожен, воспитан, порода похожа на...', location: 'Ростов-на-Дону', timeAgo: '1 день назад' },
-  { id: 2, imageUrl: 'https://via.placeholder.com/300x200/cccccc/888888?text=Dog+2', title: 'Найдена собака, отз...', description: 'На северном жилом массиве г. Ростов-на-Дону найден чёрный кобель, был в шлейке, ухожен, воспитан, порода похожа на...', location: 'Ростов-на-Дону', timeAgo: '1 день назад' },
-  { id: 3, imageUrl: 'https://via.placeholder.com/300x200/cccccc/888888?text=Dog+3', title: 'Найдена собака, отз...', description: 'На северном жилом массиве г. Ростов-на-Дону найден чёрный кобель, был в шлейке, ухожен, воспитан, порода похожа на...', location: 'Ростов-на-Дону', timeAgo: '1 день назад' },
-  { id: 4, imageUrl: 'https://via.placeholder.com/300x200/cccccc/888888?text=Dog+4', title: 'Найдена собака, отз...', description: 'На северном жилом массиве г. Ростов-на-Дону найден чёрный кобель, был в шлейке, ухожен, воспитан, порода похожа на...', location: 'Ростов-на-Дону', timeAgo: '1 день назад' },
-]);
+// Определяем интерфейсы для типов данных с API
+interface Ad {
+  id: number;
+  title: string;
+  short_description: string;
+  publication_date: string; // ISO date string
+  first_photo_url: string | null;
+  location: string;
+  species_name: string;
+}
 
-const sideArticles = ref([
-  { id: 1, imageUrl: 'https://via.placeholder.com/400x250/cccccc/888888?text=Dog+Article+1', title: 'Сколько раз в день нужно гулять с собакой', description: 'Сколько раз в день нужно гулять с собакой, зависит от возраста, породы и...', timeAgo: '1 год назад' },
-  { id: 2, imageUrl: 'https://via.placeholder.com/400x250/cccccc/888888?text=Dog+Article+2', title: 'Сколько раз в день нужно гулять с собакой', description: 'Сколько раз в день нужно гулять с собакой, зависит от возраста, породы и...', timeAgo: '1 год назад' },
-  { id: 3, imageUrl: 'https://via.placeholder.com/400x250/cccccc/888888?text=Dog+Article+3', title: 'Сколько раз в день нужно гулять с собакой', description: 'Сколько раз в день нужно гулять с собакой, зависит от возраста, породы и...', timeAgo: '1 год назад' },
-]);
+interface Article {
+  id: number;
+  title: string;
+  excerpt: string;
+  publication_date: string; // ISO date string
+  author_name: string | null;
+  main_image_url: string | null;
+}
 
-// В будущем:
-// onMounted(async () => {
-//   recentAds.value = await api.fetchRecentAds();
-//   sideArticles.value = await api.fetchSideArticles();
-// });
+const recentAds = ref<Ad[]>([]);
+const mainArticle = ref<Article | null>(null);
+const sideArticles = ref<Article[]>([]);
+const loading = ref(true);
+const error = ref<string | null>(null);
+
+// URL вашего API (замените, если Django работает на другом порту/хосте)
+const API_BASE_URL = 'http://localhost:8000/api'; // Или import.meta.env.VITE_API_URL, если настроено
+
+const fetchData = async () => {
+  loading.value = true;
+  error.value = null;
+  try {
+    const response = await axios.get<{
+      recent_ads: Ad[];
+      main_article: Article | null;
+      side_articles: Article[];
+    }>(`${API_BASE_URL}/homepage/`);
+    
+    recentAds.value = response.data.recent_ads;
+    mainArticle.value = response.data.main_article;
+    sideArticles.value = response.data.side_articles;
+
+  } catch (err) {
+    console.error("Ошибка при загрузке данных для главной страницы:", err);
+    if (axios.isAxiosError(err)) {
+        error.value = `Не удалось загрузить данные: ${err.message}. Пожалуйста, проверьте ваше соединение и API.`;
+    } else {
+        error.value = "Произошла неизвестная ошибка при загрузке данных.";
+    }
+  } finally {
+    loading.value = false;
+  }
+};
+
+// Функция для форматирования даты (простой пример)
+const formatTimeAgo = (dateString: string): string => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const seconds = Math.round((now.getTime() - date.getTime()) / 1000);
+  const minutes = Math.round(seconds / 60);
+  const hours = Math.round(minutes / 60);
+  const days = Math.round(hours / 24);
+  const months = Math.round(days / 30.44); // Среднее количество дней в месяце
+  const years = Math.round(days / 365.25); // Учитываем високосные годы
+
+  if (seconds < 60) return `${seconds} сек. назад`;
+  if (minutes < 60) return `${minutes} мин. назад`;
+  if (hours < 24) return `${hours} ч. назад`;
+  if (days < 30) return `${days} дн. назад`;
+  if (months < 12) return `${months} мес. назад`;
+  return `${years} г. назад`;
+};
+
+
+onMounted(() => {
+  fetchData();
+});
+
 </script>

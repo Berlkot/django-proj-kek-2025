@@ -61,9 +61,7 @@ class HomePageAdSerializer(serializers.ModelSerializer):
 class HomePageArticleSerializer(serializers.ModelSerializer):
     author_name = serializers.CharField(source='author.display_name', allow_null=True, read_only=True)
     excerpt = serializers.SerializerMethodField()
-    # У модели Article нет поля для изображения, как в макете.
-    # Если бы было, добавили бы image_url сюда. Пока пропустим.
-    # main_image_url = serializers.SerializerMethodField()
+    main_image_url = serializers.SerializerMethodField() # Раскомментировано/Добавлено
 
     class Meta:
         model = Article
@@ -73,20 +71,19 @@ class HomePageArticleSerializer(serializers.ModelSerializer):
             'excerpt',
             'publication_date',
             'author_name',
-            # 'main_image_url',
+            'main_image_url', # Раскомментировано/Добавлено
         ]
 
     def get_excerpt(self, obj):
-        # Укорачиваем контент для карточки
         if obj.content:
             return (obj.content[:150] + '...') if len(obj.content) > 150 else obj.content
         return ""
 
-    # def get_main_image_url(self, obj):
-    #     # Заглушка, если бы у Article было поле image типа ImageField
-    #     # if obj.image:
-    #     #     request = self.context.get('request')
-    #     #     if request:
-    #     #         return request.build_absolute_uri(obj.image.url)
-    #     #     return obj.image.url
-    #     return "https://via.placeholder.com/800x400/cccccc/888888?text=Article+Image" # Пример
+    def get_main_image_url(self, obj):
+        if obj.main_image and obj.main_image.url:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.main_image.url)
+            return obj.main_image.url
+        # Можно вернуть URL плейсхолдера по умолчанию, если изображение отсутствует
+        return "https://via.placeholder.com/800x400/cccccc/888888?text=No+Image"
