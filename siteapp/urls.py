@@ -1,10 +1,7 @@
-# animals/siteapp/urls.py
-from django.urls import path, re_path
-from django.views.generic import TemplateView
-from . import views # если у вас есть другие views
-
-app_name = 'siteapp'
+# siteapp/urls_api.py
+from django.urls import path
+from .views import HomePageDataAPIView # Убедитесь, что импорт правильный
 
 urlpatterns = [
-
+    path('homepage/', HomePageDataAPIView.as_view(), name='homepage_data_api'),
 ]

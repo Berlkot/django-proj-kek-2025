@@ -1,4 +1,3 @@
-<!-- templates/index.html или templates/base.html -->
 {% load django_vite %}
 <!doctype html>
 <html lang="ru">
@@ -6,11 +5,11 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>СпасиЗверя</title>
-        {% vite_hmr_client %} {# Для Hot Module Replacement в разработке #}
-        {% vite_asset 'src/main.ts' %} {# Точка входа вашего Vue приложения #}
+        {% vite_hmr_client %}
+        {% vite_asset 'frontend/main.ts' %}
     </head>
     <body>
-        <div id="app">
-        </div>
+        <div id="app"></div>
+
     </body>
 </html>
