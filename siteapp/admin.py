@@ -215,14 +215,15 @@ class CommentInline(admin.TabularInline): # Or StackedInline
 
 @admin.register(Article)
 class ArticleAdmin(admin.ModelAdmin):
-    list_display = ('id', 'title', 'author_email', 'publication_date_formatted', 'comment_count')
+    list_display = ('id', 'title', 'author_email', 'publication_date_formatted', 'comment_count', 'image_preview_list')
     list_filter = ('publication_date', 'author')
     search_fields = ('title', 'content', 'author__email', 'author__username')
     raw_id_fields = ('author',)
     date_hierarchy = 'publication_date'
     inlines = [CommentInline]
-    readonly_fields = ('publication_date',)
-    # prepopulated_fields = {"slug": ("title",)} # If you add a slug field
+    readonly_fields = ('publication_date', 'image_preview_admin') 
+    fields = ('title', 'author', 'content', 'main_image', 'image_preview_admin', 'publication_date') 
+    # prepopulated_fields = {"slug": ("title",)}
 
     @admin.display(description=_("Email автора"), ordering='author__email')
     def author_email(self, obj):
@@ -235,6 +236,18 @@ class ArticleAdmin(admin.ModelAdmin):
     @admin.display(description=_("Кол-во комментариев"))
     def comment_count(self, obj):
         return obj.comments.count()
+
+    @admin.display(description=_("Превью изображения"))
+    def image_preview_admin(self, obj):
+        if obj.main_image:
+            return format_html('<img src="{}" style="max-height: 200px; max-width: 200px;" />', obj.main_image.url)
+        return _("Нет изображения")
+
+    @admin.display(description=_("Превью (список)"))
+    def image_preview_list(self, obj):
+        if obj.main_image:
+            return format_html('<img src="{}" style="max-height: 50px; max-width: 50px;" />', obj.main_image.url)
+        return _("Нет изобр.")
 
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):

@@ -128,6 +128,7 @@ DJANGO_VITE = {
 
 STATICFILES_DIRS = [
     BASE_DIR / "assets",
+    BASE_DIR / "public",
 ]
 
 # Default primary key field type
@@ -153,3 +154,9 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10 # Пример размера страницы по умолчанию
 }
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:8000", # django server itself counts as CROS by browser
+    "http://127.0.0.1:8000", # django server itself counts as CROS by browser
+    "http://127.0.0.1:5173",
+]

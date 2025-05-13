@@ -20,7 +20,7 @@
           </ul>
         </div>
         <div>
-          <h5 class="font-semibold text-white mb-3">Мы в соцсетях</h5>
+          <h5 class="flex font-semibold text-white mb-3">Мы в соцсетях</h5>
           <div class="flex space-x-4">
             <!-- Замените # на реальные ссылки и используйте иконки SVG или FontAwesome -->
             <a href="#" class="bg-blue-500 p-2 rounded-full text-white hover:bg-blue-600">Tlg</a>

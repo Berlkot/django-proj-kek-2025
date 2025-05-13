@@ -208,6 +208,9 @@ class AdResponse(models.Model): # Отклик
 
 # --- Articles and Comments ---
 
+# siteapp/models.py
+# ... (другие импорты)
+
 class Article(models.Model):
     title = models.CharField(_("заголовок статьи"), max_length=255)
     content = models.TextField(_("содержимое"))
@@ -215,12 +218,20 @@ class Article(models.Model):
     author = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
-        null=True, # Article can exist even if author is deleted
-        blank=True, # Or author can be anonymous/system
+        null=True,
+        blank=True,
         verbose_name=_("автор"),
-        limit_choices_to={'is_staff': True} # Example: only staff can be authors
+        limit_choices_to={'is_staff': True}
     )
-    # slug = models.SlugField(unique=True, blank=True) # Good for URLs
+    # ДОБАВЛЕНО: Поле для главного изображения статьи
+    main_image = models.ImageField(
+        _("главное изображение"),
+        upload_to='article_images/%Y/%m/%d/',
+        blank=True, # Изображение может быть необязательным
+        null=True,
+        help_text=_("Главное изображение для статьи, отображаемое в превью и на странице статьи.")
+    )
+    # slug = models.SlugField(unique=True, blank=True)
 
     class Meta:
         verbose_name = _("статья")
@@ -229,6 +240,13 @@ class Article(models.Model):
 
     def __str__(self):
         return self.title
+
+    # ДОБАВЛЕНО: Свойство для получения URL изображения (по аналогии с AdPhoto)
+    @property
+    def main_image_url(self):
+        if self.main_image and hasattr(self.main_image, 'url'):
+            return self.main_image.url
+        return None
 
 class Comment(models.Model):
     article = models.ForeignKey(Article, related_name='comments', on_delete=models.CASCADE, verbose_name=_("статья"))
