@@ -32,6 +32,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'rest_framework',
     "django_vite",
     "corsheaders",
     "django.contrib.admin",
@@ -116,14 +117,17 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
+STATIC_ROOT = os.path.normpath(os.path.join(BASE_DIR, "staticfiles"))
+STATIC_URL = "/static/"
 
-STATIC_URL = "static/"
-
-DJANGO_VITE_ASSETS_PATH = BASE_DIR / "frontend" / "dist" # Путь к собранным ассетам Vue
-DJANGO_VITE_MANIFEST_PATH = DJANGO_VITE_ASSETS_PATH / "manifest.json"
+DJANGO_VITE = {
+    "default": {
+        "dev_mode": True
+    }
+}
 
 STATICFILES_DIRS = [
-    DJANGO_VITE_ASSETS_PATH,
+    BASE_DIR / "assets",
 ]
 
 # Default primary key field type
@@ -137,7 +141,15 @@ AUTH_USER_MODEL = 'siteapp.User'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
+REST_FRAMEWORK = {
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ],
+    # Раскомментируйте, если хотите использовать Browsable API в разработке
+    # 'DEFAULT_RENDERER_CLASSES': (
+    #     'rest_framework.renderers.JSONRenderer',
+    #     'rest_framework.renderers.BrowsableAPIRenderer',
+    # )
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10 # Пример размера страницы по умолчанию
+}
