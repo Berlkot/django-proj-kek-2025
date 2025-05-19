@@ -1,236 +1,265 @@
 <template>
   <div>
-    <!-- 1. Поиск животных -->
-    <section class="bg-amber-100 py-16 md:py-24 relative">
-      <div class="absolute inset-0 z-0 opacity-40">
-        <!-- Фоновое изображение будет здесь, если нужно. Пока просто цвет -->
-        <!-- Для изображения: <img src="/path/to/hero-bg.jpg" alt="" class="w-full h-full object-cover"> -->
-      </div>
+    <section class="bg-gray-700 text-white pt-16 md:pt-24 pb-0 relative overflow-hidden">
       <div class="container mx-auto px-4 flex flex-col md:flex-row items-center relative z-10">
-        <div class="md:w-1/2 text-center md:text-left mb-10 md:mb-0">
-          <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4">Поиск животных</h1>
-          <p class="text-lg text-gray-700 mb-8">Найди или помоги другому найти своего любимца</p>
+        <div class="md:w-1/2 text-center md:text-left mb-10 md:mb-0 md:pr-8"> 
+          <h1 class="text-4xl md:text-5xl font-bold mb-4">Поиск животных</h1>
+          <p class="text-lg mb-8">Найди или помоги другому найти своего любимца</p>
           <div class="flex max-w-md mx-auto md:mx-0">
             <input
               type="text"
               placeholder="Поиск животных..."
               class="flex-grow p-3 border border-gray-300 rounded-l-md focus:ring-green-500 focus:border-green-500"
             />
-            <button class="bg-green-500 text-white px-6 py-3 rounded-r-md hover:bg-green-600">
+            <button class="bg-green-500 text-white px-6 py-3 rounded-r-md hover:bg-green-600 flex items-center justify-center">
+              <font-awesome-icon :icon="['fas', 'search']" class="mr-2" />
               Поиск
             </button>
           </div>
         </div>
-        <div class="md:w-1/2 flex justify-center md:justify-end">
-           <!-- Замените на ваш реальный путь к статическому изображению, если оно есть -->
-           <img src="/images/hero-pets.png" alt="Собака и кошка" class="max-w-xs md:max-w-md rounded-lg shadow-lg">
-         </div>
+        <div class="md:w-1/2 flex justify-center md:justify-end self-end"> 
+          <img
+            src="/images/hero-pets.png"
+            alt="Собака и кошка"
+            class="max-w-full h-auto md:max-w-lg lg:max-w-xl"
+          >
+        </div>
       </div>
     </section>
 
-    <!-- 2. Последние объявления -->
-    <section class="py-12 md:py-16 bg-white">
-      <div class="container mx-auto px-4">
-        <div class="flex justify-between items-center mb-8">
-          <h2 class="text-3xl font-bold text-gray-800">Последние объявления</h2>
-          <a href="/ads" class="text-green-600 hover:text-green-700 font-semibold">
-            Посмотреть все >
-          </a>
-        </div>
-        <div v-if="loading" class="text-center text-gray-500">Загрузка объявлений...</div>
-        <div v-else-if="recentAds.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <AdCard
-            v-for="ad in recentAds"
-            :key="ad.id"
-            :image-url="ad.first_photo_url || 'https://via.placeholder.com/300x200/cccccc/888888?text=No+Photo'"
-            :title="ad.title"
-            :description="ad.short_description"
-            :location="ad.location"
-            :time-ago="formatTimeAgo(ad.publication_date)"
-          />
-        </div>
-        <div v-else-if="!loading && recentAds.length === 0" class="text-center text-gray-500">
-            Нет доступных объявлений.
-        </div>
-        <div v-if="error" class="text-center text-red-500 mt-4">{{ error }}</div>
-      </div>
-    </section>
+        <section class="py-10 md:py-12 bg-white">
+          <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center mb-6 md:mb-8">
+              <h2 class="text-2xl md:text-3xl font-bold text-gray-800">Последние объявления</h2>
+              <router-link to="/ads" class="text-green-600 hover:text-green-700 font-semibold flex items-center text-sm md:text-base">
+                Посмотреть все
+                <font-awesome-icon :icon="['fas', 'chevron-right']" class="ml-1 w-3 h-3" />
+              </router-link>
+            </div>
+            <div v-if="loading" class="text-center text-gray-500">Загрузка объявлений...</div>
+            <!-- Изменено: 1 колонка по умолчанию, 2 на sm, 4 на lg -->
+            <div v-else-if="recentAds.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+              <AdCard
+                v-for="ad in recentAds"
+                :key="ad.id"
+                :image-url="ad.first_photo_url || 'images/no-image-data.png'"
+                :title="ad.title"
+                :description="ad.short_description"
+                :location="ad.location"
+                :time-ago="formatTimeAgo(ad.publication_date)"
+              />
+            </div>
+            <div v-else-if="!loading && recentAds.length === 0" class="text-center text-gray-500 py-8">
+                Нет доступных объявлений.
+            </div>
+            <div v-if="error" class="text-center text-red-500 mt-4">{{ error }}</div>
+            <!-- Кнопка "Больше объявлений" под объявлениями на мобильных -->
+            <div class="mt-8 text-center">
+                <router-link to="/ads" class="inline-block bg-green-500 text-white px-8 py-3 rounded-md hover:bg-green-600 font-semibold">
+                    Больше объявлений
+                </router-link>
+            </div>
+          </div>
+        </section>
+    
+        <!-- 3. Статьи о питомцах -->
+        <section class="py-10 md:py-12 bg-gray-100">
+          <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center mb-6 md:mb-8">
+              <h2 class="text-2xl md:text-3xl font-bold text-gray-800">Статьи о питомцах</h2>
+              <router-link :to="{ name: 'Articles' }" class="text-green-600 hover:text-green-700 font-semibold flex items-center text-sm md:text-base">
+                Посмотреть все
+                <font-awesome-icon :icon="['fas', 'chevron-right']" class="ml-1 w-3 h-3" />
+              </router-link>
+            </div>
+    
+            <div v-if="loadingArticles" class="text-center text-gray-500">Загрузка статей...</div>
+            <div v-else-if="mainArticle || sideArticles.length > 0" class="flex flex-col lg:flex-row lg:items-stretch gap-6 md:gap-8">
+              <!-- Большая статья слева -->
+              <div v-if="mainArticle && mainArticleForGridCard" class="w-full lg:w-2/3">
+                <ArticleGridCard
+                  :article="mainArticleForGridCard"
+                  :large="true"
+                  class="h-full"
+                />
+              </div>
+              <!-- Маленькие статьи справа -->
+              <div v-if="sideArticles.length > 0" class="w-full lg:w-1/3 flex flex-col space-y-4 md:space-y-6">
+                <ArticleGridCard
+                  v-for="article in sideArticlesForGridCard"
+                  :key="article.id"
+                  :article="article"
+                  class="h-full" 
+                />
+              </div>
+            </div>
+                <div v-else-if="!loadingArticles && !mainArticle && sideArticles.length === 0" class="text-center text-gray-500 py-8">
+                    Нет доступных статей.
+                </div>
+                <div v-if="errorArticles" class="text-center text-red-500 mt-4">{{ errorArticles }}</div>
+                <div class="mt-8 text-center">
+                    <router-link :to="{ name: 'Articles' }" class="inline-block bg-green-500 text-white px-8 py-3 rounded-md hover:bg-green-600 font-semibold">
+                        Больше статей
+                    </router-link>
+                </div>
+              </div>
+            </section>
 
-    <!-- 3. Статьи о питомцах -->
-    <section class="py-12 md:py-16 bg-gray-100">
-      <div class="container mx-auto px-4">
-        <div class="flex justify-between items-center mb-8">
-          <h2 class="text-3xl font-bold text-gray-800">Статьи о питомцах</h2>
-          <a href="/articles" class="text-green-600 hover:text-green-700 font-semibold">
-            Посмотреть все >
-          </a>
-        </div>
-        <div v-if="loading" class="text-center text-gray-500">Загрузка статей...</div>
-        <div v-else-if="mainArticle || sideArticles.length > 0" class="flex flex-col lg:flex-row gap-8">
-          <!-- Большая статья слева -->
-          <div v-if="mainArticle" class="lg:w-2/3">
-            <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-              <img
-                :src="mainArticle.main_image_url || 'https://via.placeholder.com/800x400/cccccc/888888?text=Article'"
-                :alt="mainArticle.title"
-                class="w-full h-64 object-cover"
-              >
-              <div class="p-6">
-                <h3 class="text-2xl font-semibold text-gray-800 mb-2">{{ mainArticle.title }}</h3>
-                <p class="text-gray-600 mb-4">{{ mainArticle.excerpt }}</p>
-                <span class="text-sm text-gray-500">{{ formatTimeAgo(mainArticle.publication_date) }}</span>
+    
+        <!-- 4. Приюты -->
+        <section class="py-10 md:py-12 bg-white">
+          <div class="container mx-auto px-4">
+            <!-- На мобильных: текст сверху, карта снизу -->
+            <div class="flex flex-col lg:flex-row items-center gap-6 md:gap-8">
+              <div class="w-full lg:w-1/2 text-center lg:text-left">
+                <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-3 md:mb-4">Приюты</h2>
+                <p class="text-gray-700 mb-3 md:mb-4 text-sm md:text-base">
+                  Зачем куда-to далеко ходить или спрашивать у знакомых.
+                </p>
+                <p class="text-gray-700 mb-6 md:mb-8 text-sm md:text-base">
+                  Легко найдите приют на интерактивной карте в шаге от вашего дома
+                </p>
+                <router-link to="/shelters" class="inline-block bg-white text-green-600 border border-green-600 px-6 py-3 rounded-md hover:bg-green-50 font-semibold">
+                  О приютах
+                </router-link>
+              </div>
+              <div class="w-full lg:w-1/2">
+                <img src="/images/map-placeholder.png" alt="Карта приютов" class="w-full rounded-lg shadow-md max-h-[300px] md:max-h-[400px] object-cover">
               </div>
             </div>
           </div>
-           <div v-else-if="!mainArticle && sideArticles.length === 0 && !loading" class="lg:w-2/3 text-center text-gray-500">
-              Нет главной статьи для отображения.
+        </section>
+    
+        <!-- 5. Партнеры (Спонсоры) -->
+        <section class="py-10 md:py-12 bg-gray-100">
+          <div class="container mx-auto px-4">
+            <!-- 2 колонки на мобильных, 3 на sm, 5 на lg -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 md:gap-8 items-center justify-items-center">
+              <img src="/images/partners/purina.png" alt="Purina" class="h-10 md:h-12 opacity-70 hover:opacity-100 transition-opacity">
+              <img src="/images/partners/birulevo.png" alt="Приют Бирюлево" class="h-10 md:h-12 opacity-70 hover:opacity-100 transition-opacity">
+              <img src="/images/partners/drug-sobaka.png" alt="Drug Sobaka" class="h-10 md:h-12 opacity-70 hover:opacity-100 transition-opacity">
+              <img src="/images/partners/drug-dlya-druga.png" alt="Друг для друга" class="h-10 md:h-12 opacity-70 hover:opacity-100 transition-opacity">
+              <!-- Для последней иконки, если их нечетное количество для lg:grid-cols-5 -->
+              <img src="/images/partners/iskra.png" alt="Искра" class="h-10 md:h-12 opacity-70 hover:opacity-100 transition-opacity col-span-2 sm:col-span-1">
+            </div>
           </div>
-
-          <!-- Маленькие статьи справа -->
-          <div v-if="sideArticles.length > 0" class="lg:w-1/3 space-y-6">
-            <ArticleCard
-              v-for="article in sideArticles"
-              :key="article.id"
-              :image-url="article.main_image_url || 'https://via.placeholder.com/400x250/cccccc/888888?text=Article'"
-              :title="article.title"
-              :description="article.excerpt"
-              :time-ago="formatTimeAgo(article.publication_date)"
-            />
-          </div>
-           <div v-else-if="sideArticles.length === 0 && !mainArticle && !loading" class="lg:w-1/3 text-center text-gray-500">
-              Нет дополнительных статей.
-          </div>
-        </div>
-         <div v-else-if="!loading && !mainArticle && sideArticles.length === 0" class="text-center text-gray-500">
-            Нет доступных статей.
-        </div>
-        <div v-if="error" class="text-center text-red-500 mt-4">{{ error }}</div>
+        </section>
       </div>
-    </section>
-
-    <!-- ... (остальные секции: Приюты, Партнеры - пока без изменений) ... -->
-    <!-- 4. Приюты -->
-    <section class="py-12 md:py-16 bg-white">
-      <div class="container mx-auto px-4">
-        <div class="flex flex-col lg:flex-row items-center gap-8">
-          <div class="lg:w-1/2 text-center lg:text-left">
-            <h2 class="text-3xl font-bold text-gray-800 mb-4">Приюты</h2>
-            <p class="text-gray-700 mb-6">
-              Зачем куда-то далеко ходить или спрашивать у знакомых.
-            </p>
-            <p class="text-gray-700 mb-8">
-              Легко найдите приют на интерактивной карте в шаге от вашего дома
-            </p>
-            <button class="bg-white text-green-600 border border-green-600 px-6 py-3 rounded-md hover:bg-green-50 font-semibold">
-              О приютах
-            </button>
-          </div>
-          <div class="lg:w-1/2">
-            <img src="/images/map-placeholder.png" alt="Карта приютов" class="w-full rounded-lg shadow-md">
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 5. Партнеры (Спонсоры) -->
-    <section class="py-12 bg-gray-100">
-      <div class="container mx-auto px-4">
-        <!-- Замените src на пути к вашим реальным логотипам в public/images/partners/ -->
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 items-center justify-items-center">
-          <img src="/images/partners/purina.png" alt="Purina" class="h-10 md:h-12 opacity-70 hover:opacity-100 transition-opacity">
-          <img src="/images/partners/birulevo.png" alt="Приют Бирюлево" class="h-10 md:h-12 opacity-70 hover:opacity-100 transition-opacity">
-          <img src="/images/partners/drug-sobaka.png" alt="Drug Sobaka" class="h-10 md:h-12 opacity-70 hover:opacity-100 transition-opacity">
-          <img src="/images/partners/drug-dlya-druga.png" alt="Друг для друга" class="h-10 md:h-12 opacity-70 hover:opacity-100 transition-opacity">
-          <img src="/images/partners/iskra.png" alt="Искра" class="h-10 md:h-12 opacity-70 hover:opacity-100 transition-opacity col-span-2 md:col-span-1 lg:col-auto justify-self-center">
-        </div>
-      </div>
-    </section>
-  </div>
-</template>
-
+    </template>
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import axios from 'axios'; // Убедитесь, что axios установлен: npm install axios
+import { ref, onMounted, computed } from 'vue';
+import axios from 'axios';
 import AdCard from '../components/AdCard.vue';
-import ArticleCard from '../components/ArticleCard.vue';
+import ArticleGridCard from '../components/ArticleGridCard.vue';
+import { formatTimeAgo } from '../utils/time'; // Предполагаем, что formatTimeAgo перенесен в utils
+import type { ArticleCategory } from '../types'; // Если нужно, для типизации
 
-// Определяем интерфейсы для типов данных с API
 interface Ad {
   id: number;
   title: string;
   short_description: string;
-  publication_date: string; // ISO date string
+  publication_date: string;
   first_photo_url: string | null;
   location: string;
   species_name: string;
 }
 
-interface Article {
+// Интерфейс для статей с главной страницы (из HomePageArticleSerializer)
+interface HomePageArticle {
   id: number;
   title: string;
   excerpt: string;
-  publication_date: string; // ISO date string
+  publication_date: string;
   author_name: string | null;
   main_image_url: string | null;
+  // categories?: ArticleCategory[]; // HomePageArticleSerializer не возвращает категории по умолчанию
 }
 
-const recentAds = ref<Ad[]>([]);
-const mainArticle = ref<Article | null>(null);
-const sideArticles = ref<Article[]>([]);
-const loading = ref(true);
-const error = ref<string | null>(null);
+// Интерфейс, который ожидает ArticleGridCard
+interface ArticleForGridCard {
+  id: number;
+  title: string;
+  excerpt: string;
+  publication_date: string;
+  main_image_url: string | null;
+  categories?: ArticleCategory[]; // ArticleGridCard может отображать категории
+  // author_name не используется напрямую в ArticleGridCard, но может быть полезен для передачи
+}
 
-// URL вашего API (замените, если Django работает на другом порту/хосте)
-const API_BASE_URL = 'http://localhost:8000/api'; // Или import.meta.env.VITE_API_URL, если настроено
+
+const recentAds = ref<Ad[]>([]);
+const mainArticle = ref<HomePageArticle | null>(null);
+const sideArticles = ref<HomePageArticle[]>([]);
+
+const loadingAds = ref(true);
+const errorAds = ref<string | null>(null);
+const loadingArticles = ref(true);
+const errorArticles = ref<string | null>(null);
+
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+
+// Трансформация данных для ArticleGridCard
+const mainArticleForGridCard = computed((): ArticleForGridCard | undefined => {
+  if (!mainArticle.value) return undefined;
+  return {
+    id: mainArticle.value.id,
+    title: mainArticle.value.title,
+    excerpt: mainArticle.value.excerpt,
+    publication_date: mainArticle.value.publication_date,
+    main_image_url: mainArticle.value.main_image_url,
+    // categories: mainArticle.value.categories // если бы они были
+  };
+});
+
+const sideArticlesForGridCard = computed((): ArticleForGridCard[] => {
+  return sideArticles.value.map(article => ({
+    id: article.id,
+    title: article.title,
+    excerpt: article.excerpt,
+    publication_date: article.publication_date,
+    main_image_url: article.main_image_url,
+    // categories: article.categories
+  }));
+});
+
 
 const fetchData = async () => {
-  loading.value = true;
-  error.value = null;
+  loadingAds.value = true;
+  loadingArticles.value = true;
+  errorAds.value = null;
+  errorArticles.value = null;
+
   try {
     const response = await axios.get<{
       recent_ads: Ad[];
-      main_article: Article | null;
-      side_articles: Article[];
+      main_article: HomePageArticle | null;
+      side_articles: HomePageArticle[];
     }>(`${API_BASE_URL}/homepage/`);
-    
-    recentAds.value = response.data.recent_ads;
+
+    recentAds.value = response.data.recent_ads || [];
     mainArticle.value = response.data.main_article;
-    sideArticles.value = response.data.side_articles;
+    sideArticles.value = response.data.side_articles || [];
 
   } catch (err) {
     console.error("Ошибка при загрузке данных для главной страницы:", err);
     if (axios.isAxiosError(err)) {
-        error.value = `Не удалось загрузить данные: ${err.message}. Пожалуйста, проверьте ваше соединение и API.`;
+        const message = `Не удалось загрузить данные: ${err.message}.`;
+        errorAds.value = message; // Предположим, ошибка касается всего
+        errorArticles.value = message;
     } else {
-        error.value = "Произошла неизвестная ошибка при загрузке данных.";
+        errorAds.value = "Произошла неизвестная ошибка при загрузке объявлений.";
+        errorArticles.value = "Произошла неизвестная ошибка при загрузке статей.";
     }
   } finally {
-    loading.value = false;
+    loadingAds.value = false;
+    loadingArticles.value = false;
   }
 };
 
-// Функция для форматирования даты (простой пример)
-const formatTimeAgo = (dateString: string): string => {
-  const date = new Date(dateString);
-  const now = new Date();
-  const seconds = Math.round((now.getTime() - date.getTime()) / 1000);
-  const minutes = Math.round(seconds / 60);
-  const hours = Math.round(minutes / 60);
-  const days = Math.round(hours / 24);
-  const months = Math.round(days / 30.44); // Среднее количество дней в месяце
-  const years = Math.round(days / 365.25); // Учитываем високосные годы
-
-  if (seconds < 60) return `${seconds} сек. назад`;
-  if (minutes < 60) return `${minutes} мин. назад`;
-  if (hours < 24) return `${hours} ч. назад`;
-  if (days < 30) return `${days} дн. назад`;
-  if (months < 12) return `${months} мес. назад`;
-  return `${years} г. назад`;
-};
-
+// formatTimeAgo уже импортирован
 
 onMounted(() => {
   fetchData();
 });
-
 </script>

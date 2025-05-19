@@ -50,9 +50,10 @@ class User(AbstractUser):
         blank=True, # A user might not specify a region
         verbose_name=_("регион")
     )
+    avatar = models.ImageField(_("аватар"), upload_to='user_avatars/', null=True, blank=True, help_text=_("Аватар пользователя"))
 
-    USERNAME_FIELD = 'email' # Use email for login
-    REQUIRED_FIELDS = ['username'] # username is still needed for createsuperuser if not customizing manager
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username']
 
     class Meta:
         verbose_name = _("пользователь")
@@ -65,6 +66,11 @@ class User(AbstractUser):
     def get_full_name(self):
         return self.display_name or self.username
 
+    @property
+    def avatar_url(self):
+        if self.avatar and hasattr(self.avatar, 'url'):
+            return self.avatar.url
+        return None # Or path to a default placeholder
 
 class AdStatus(models.Model):
     name = models.CharField(_("название статуса"), max_length=50, unique=True)
@@ -101,19 +107,55 @@ class Breed(models.Model): # Порода
     def __str__(self):
         return f"{self.name} ({self.species.name})"
 
+class AnimalColor(models.Model):
+    name = models.CharField(_("название окраса"), max_length=100, unique=True)
+
+    class Meta:
+        verbose_name = _("окрас животного")
+        verbose_name_plural = _("окрасы животных")
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+class AnimalGender(models.Model):
+    name = models.CharField(_("пол"), max_length=30, unique=True) # e.g., "Мальчик", "Девочка", "Не указан"
+
+    class Meta:
+        verbose_name = _("пол животного")
+        verbose_name_plural = _("пол животных")
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
 class Animal(models.Model):
     name = models.CharField(_("имя/кличка"), max_length=100, blank=True, null=True, help_text=_("Может быть пустым, если неизвестно"))
     birth_date = models.DateField(_("дата рождения"), blank=True, null=True, help_text=_("Примерная, если точная неизвестна"))
-    species = models.ForeignKey(Species, on_delete=models.PROTECT, verbose_name=_("вид")) # Protect: don't delete species if animals exist
+    species = models.ForeignKey(Species, on_delete=models.PROTECT, verbose_name=_("вид"))
     breed = models.ForeignKey(
         Breed,
-        on_delete=models.SET_NULL, # If breed is deleted, animal becomes "unknown breed"
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
         verbose_name=_("порода"),
         help_text=_("Может быть пустым для беспородных или если порода неизвестна")
     )
-    # Consider adding 'description', 'photo' fields here too
+    color = models.ForeignKey(
+        AnimalColor,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name=_("окрас")
+    )
+    gender = models.ForeignKey(
+        AnimalGender,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name=_("пол")
+    )
+    # Consider adding 'description', 'photo' fields here too (если они специфичны для животного, а не объявления)
 
     class Meta:
         verbose_name = _("животное")
@@ -208,8 +250,28 @@ class AdResponse(models.Model): # Отклик
 
 # --- Articles and Comments ---
 
-# siteapp/models.py
-# ... (другие импорты)
+
+class ArticleCategory(models.Model):
+    name = models.CharField(_("название категории"), max_length=100, unique=True)
+    slug = models.SlugField(_("слаг"), max_length=100, unique=True, blank=True, help_text=_("Используется в URL. Оставьте пустым для автоматической генерации (на латинице)."))
+
+    class Meta:
+        verbose_name = _("категория статей")
+        verbose_name_plural = _("категории статей")
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            # Генерируем slug из name, преобразуя кириллицу в латиницу (если необходимо использовать специфичные библиотеки для транслитерации, например, pytils)
+            # Стандартный slugify просто удалит не-ascii символы или заменит пробелы.
+            # Для лучшей транслитерации можно использовать pytils.translit.slugify(self.name)
+            self.slug = slugify(self.name)
+            if not self.slug: # Если имя состоит только из символов, которые удаляются
+                 self.slug = str(self.id) if self.id else 'category' # Простой фоллбэк
+        super().save(*args, **kwargs)
 
 class Article(models.Model):
     title = models.CharField(_("заголовок статьи"), max_length=255)
@@ -223,15 +285,20 @@ class Article(models.Model):
         verbose_name=_("автор"),
         limit_choices_to={'is_staff': True}
     )
-    # ДОБАВЛЕНО: Поле для главного изображения статьи
     main_image = models.ImageField(
         _("главное изображение"),
         upload_to='article_images/%Y/%m/%d/',
-        blank=True, # Изображение может быть необязательным
+        blank=True,
         null=True,
         help_text=_("Главное изображение для статьи, отображаемое в превью и на странице статьи.")
     )
-    # slug = models.SlugField(unique=True, blank=True)
+    categories = models.ManyToManyField(
+        ArticleCategory,
+        related_name='articles',
+        blank=True,
+        verbose_name=_("категории")
+    )
+    # slug = models.SlugField(unique=True, blank=True) # Если нужен slug для самой статьи
 
     class Meta:
         verbose_name = _("статья")
@@ -241,12 +308,17 @@ class Article(models.Model):
     def __str__(self):
         return self.title
 
-    # ДОБАВЛЕНО: Свойство для получения URL изображения (по аналогии с AdPhoto)
     @property
     def main_image_url(self):
         if self.main_image and hasattr(self.main_image, 'url'):
             return self.main_image.url
-        return None
+        return None # Или URL плейсхолдера по умолчанию
+
+    @property
+    def excerpt(self):
+        if self.content:
+            return (self.content[:150] + '...') if len(self.content) > 150 else self.content
+        return ""
 
 class Comment(models.Model):
     article = models.ForeignKey(Article, related_name='comments', on_delete=models.CASCADE, verbose_name=_("статья"))
@@ -280,3 +352,5 @@ class Volunteering(models.Model):
 
     def __str__(self):
         return f"{_('Волонтёрство:')} {self.user.get_full_name()} {_('в приюте')} {self.shelter.name} {_('с')} {self.start_date.strftime('%Y-%m-%d %H:%M')}"
+
+

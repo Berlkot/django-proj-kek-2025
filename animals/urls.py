@@ -9,9 +9,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('siteapp.urls')),
 
-    # Эта строка должна быть ПОСЛЕ всех API эндпоинтов
-    # Она отдает управление Vue Router для всех остальных путей, если вы так настроили
-    re_path(r'^.*$', TemplateView.as_view(template_name='index.html'), name='app'),
+    re_path(r'^((?!media).)*$', TemplateView.as_view(template_name='index.html'), name='app'),
 ]
 
 # Для обслуживания медиа файлов в режиме DEBUG

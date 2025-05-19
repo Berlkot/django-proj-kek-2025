@@ -1,9 +1,11 @@
 <template>
-  <div class="flex flex-col min-h-screen bg-gray-50">
-    <AppHeader />
-    <main class="flex-grow">
-      <!-- Если используете Vue Router, здесь будет <router-view /> -->
-      <HomePage /> <!-- Для примера直接 вставляем HomePage -->
+  <div id="app-container" class="flex flex-col min-h-screen">
+    <AppHeader /> <main class="flex-grow">
+      <router-view v-slot="{ Component, route }">
+        <transition name="fade" mode="out-in">
+          <component :is="Component" :key="route.path" />
+        </transition>
+      </router-view>
     </main>
     <AppFooter />
   </div>
@@ -12,5 +14,18 @@
 <script setup lang="ts">
 import AppHeader from './components/AppHeader.vue';
 import AppFooter from './components/AppFooter.vue';
-import HomePage from './views/HomePage.vue'; // Компонент главной страницы
+// import { RouterView } from 'vue-router'; // Можно не импортировать, если используется глобально
 </script>
+
+<style>
+/* Глобальные стили или стили для App.vue */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>
