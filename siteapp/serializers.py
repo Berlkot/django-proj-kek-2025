@@ -1,6 +1,11 @@
 # siteapp/serializers.py
 from rest_framework import serializers
-from .models import Advertisement, AdPhoto, Article, User, Region, ArticleCategory, AnimalColor, AnimalGender
+from .models import (
+    Advertisement, AdPhoto, Article, User, Region, Species, AdStatus,
+    AnimalColor, AnimalGender, Animal, ArticleCategory
+)
+from django.utils import timezone
+from dateutil.relativedelta import relativedelta
 
 # Вспомогательный сериализатор для фото, если нужно будет больше деталей
 class AdPhotoSerializer(serializers.ModelSerializer):
@@ -21,6 +26,8 @@ class HomePageAdSerializer(serializers.ModelSerializer):
     location = serializers.SerializerMethodField()
     short_description = serializers.SerializerMethodField()
     species_name = serializers.CharField(source='animal.species.name', read_only=True)
+    publication_date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%S.%fZ", read_only=True)
+    status_name = serializers.CharField(source='status.name', read_only=True)
 
     class Meta:
         model = Advertisement
@@ -32,6 +39,7 @@ class HomePageAdSerializer(serializers.ModelSerializer):
             'first_photo_url',
             'location',
             'species_name', # Добавлено для возможной фильтрации или отображения
+            'status_name', 
         ]
 
     def get_first_photo_url(self, obj):
@@ -225,8 +233,6 @@ class AdvertisementListSerializer(serializers.ModelSerializer):
             if request:
                 return request.build_absolute_uri(first_photo.image.url)
             return first_photo.image.url
-        # Можно возвращать URL плейсхолдера, если нет фото
-        # return "https://via.placeholder.com/300x200/cccccc/888888?text=No+Image"
         return None
 
     def get_location(self, obj):

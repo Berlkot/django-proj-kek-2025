@@ -26,41 +26,41 @@
         </div>
       </div>
     </section>
-
-        <section class="py-10 md:py-12 bg-white">
-          <div class="container mx-auto px-4">
-            <div class="flex justify-between items-center mb-6 md:mb-8">
-              <h2 class="text-2xl md:text-3xl font-bold text-gray-800">Последние объявления</h2>
-              <router-link to="/ads" class="text-green-600 hover:text-green-700 font-semibold flex items-center text-sm md:text-base">
-                Посмотреть все
-                <font-awesome-icon :icon="['fas', 'chevron-right']" class="ml-1 w-3 h-3" />
-              </router-link>
-            </div>
-            <div v-if="loading" class="text-center text-gray-500">Загрузка объявлений...</div>
-            <!-- Изменено: 1 колонка по умолчанию, 2 на sm, 4 на lg -->
-            <div v-else-if="recentAds.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-              <AdCard
-                v-for="ad in recentAds"
-                :key="ad.id"
-                :image-url="ad.first_photo_url || 'images/no-image-data.png'"
-                :title="ad.title"
-                :description="ad.short_description"
-                :location="ad.location"
-                :time-ago="formatTimeAgo(ad.publication_date)"
-              />
-            </div>
-            <div v-else-if="!loading && recentAds.length === 0" class="text-center text-gray-500 py-8">
-                Нет доступных объявлений.
-            </div>
-            <div v-if="error" class="text-center text-red-500 mt-4">{{ error }}</div>
-            <!-- Кнопка "Больше объявлений" под объявлениями на мобильных -->
-            <div class="mt-8 text-center">
-                <router-link to="/ads" class="inline-block bg-green-500 text-white px-8 py-3 rounded-md hover:bg-green-600 font-semibold">
-                    Больше объявлений
-                </router-link>
-            </div>
-          </div>
-        </section>
+    <section class="py-10 md:py-12 bg-white">
+      <div class="container mx-auto px-4">
+        <div class="flex justify-between items-center mb-6 md:mb-8">
+          <h2 class="text-2xl md:text-3xl font-bold text-gray-800">Последние объявления</h2>
+          <router-link :to="{ name: 'Advertisements' }" class="text-green-600 hover:text-green-700 font-semibold flex items-center text-sm md:text-base">
+            Посмотреть все
+            <font-awesome-icon :icon="['fas', 'chevron-right']" class="ml-1 w-3 h-3" />
+          </router-link>
+        </div>
+        <div v-if="loadingAds" class="text-center text-gray-500">Загрузка объявлений...</div>
+        <div v-else-if="recentAds.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+          <AdCard
+            v-for="ad in recentAds"
+            :key="ad.id"
+            :id="ad.id" 
+            :image-url="ad.first_photo_url || '/static/images/no-image-data.png'"
+            :title="ad.title"
+            :description="ad.short_description"
+            :location="ad.location"
+            :time-ago="formatTimeAgo(ad.publication_date)"
+            :ad-type="ad.status_name" 
+            :species-name="ad.species_name" 
+          />
+        </div>
+        <div v-else-if="!loadingAds && recentAds.length === 0" class="text-center text-gray-500 py-8">
+            Нет доступных объявлений.
+        </div>
+        <div v-if="errorAds" class="text-center text-red-500 mt-4">{{ errorAds }}</div>
+        <div class="mt-8 text-center">
+            <router-link :to="{ name: 'Advertisements' }" class="inline-block bg-green-500 text-white px-8 py-3 rounded-md hover:bg-green-600 font-semibold">
+                Больше объявлений
+            </router-link>
+        </div>
+      </div>
+    </section>
     
         <!-- 3. Статьи о питомцах -->
         <section class="py-10 md:py-12 bg-gray-100">
@@ -154,7 +154,7 @@ import ArticleGridCard from '../components/ArticleGridCard.vue';
 import { formatTimeAgo } from '../utils/time'; // Предполагаем, что formatTimeAgo перенесен в utils
 import type { ArticleCategory } from '../types'; // Если нужно, для типизации
 
-interface Ad {
+interface HomePageAd {
   id: number;
   title: string;
   short_description: string;
@@ -162,6 +162,7 @@ interface Ad {
   first_photo_url: string | null;
   location: string;
   species_name: string;
+  status_name?: string; // <--- ДОБАВЛЕНО: Имя статуса для ad-type
 }
 
 // Интерфейс для статей с главной страницы (из HomePageArticleSerializer)
@@ -187,7 +188,7 @@ interface ArticleForGridCard {
 }
 
 
-const recentAds = ref<Ad[]>([]);
+const recentAds = ref<HomePageAd[]>([]);
 const mainArticle = ref<HomePageArticle | null>(null);
 const sideArticles = ref<HomePageArticle[]>([]);
 
@@ -232,7 +233,7 @@ const fetchData = async () => {
 
   try {
     const response = await axios.get<{
-      recent_ads: Ad[];
+      recent_ads: HomePageAd[];
       main_article: HomePageArticle | null;
       side_articles: HomePageArticle[];
     }>(`${API_BASE_URL}/homepage/`);
