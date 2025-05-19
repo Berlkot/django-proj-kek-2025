@@ -5,15 +5,18 @@ from rest_framework import status, generics, filters, permissions # generics и 
 from rest_framework.pagination import PageNumberPagination # Добавлено для пагинации
 from django_filters.rest_framework import DjangoFilterBackend
 
-from .models import Advertisement, Article, AdStatus, ArticleCategory, Region, Species, AnimalColor, AnimalGender, AdResponse
+
+from .models import Advertisement, Article, AdStatus, ArticleCategory, Region, Species, AnimalColor, AnimalGender, AdResponse, Comment
 from .serializers import (
     HomePageAdSerializer, HomePageArticleSerializer,
     ArticleListSerializer, ArticleCategorySerializer, ArticleDetailSerializer,
     AdvertisementListSerializer, RegionSerializer, SpeciesSerializer, AdStatusSerializer,
-    AnimalColorSerializer, AnimalGenderSerializer, AdvertisementDetailSerializer, AdResponseSerializer
+    AnimalColorSerializer, AnimalGenderSerializer, AdvertisementDetailSerializer, AdResponseSerializer, ArticleManageSerializer,
+    CommentSerializer
 )
 
 from .filters import AdvertisementFilter, AGE_CHOICES
+from .permissions import IsOwnerOrAdminOrReadOnly, CanManageArticles
 
 class HomePageDataAPIView(APIView):
     """
@@ -85,11 +88,6 @@ class ArticleCategoryListAPIView(generics.ListAPIView):
     serializer_class = ArticleCategorySerializer
     pagination_class = None
 
-class ArticleDetailAPIView(generics.RetrieveAPIView):
-    queryset = Article.objects.select_related('author').all() # prefetch_related('categories') если они нужны
-    serializer_class = ArticleDetailSerializer
-    lookup_field = 'id' # Используем ID для поиска статьи
-
 class AdsPageNumberPagination(PageNumberPagination):
     page_size = 12 # По 3 в ряд, 4 ряда = 12 (или сколько вам нужно)
     page_size_query_param = 'page_size'
@@ -146,9 +144,84 @@ class AdvertisementDetailAPIView(generics.RetrieveAPIView):
 class AdResponseCreateAPIView(generics.CreateAPIView):
     queryset = AdResponse.objects.all()
     serializer_class = AdResponseSerializer
-    permission_classes = [permissions.IsAuthenticated] # Только авторизованные могут оставлять отклики
+    permission_classes = [permissions.IsAuthenticated] # Только аутентифицированные
 
     def perform_create(self, serializer):
-        advertisement_id = self.kwargs.get('ad_id') # Получаем ID объявления из URL
+        advertisement_id = self.kwargs.get('ad_id')
         advertisement = generics.get_object_or_404(Advertisement, pk=advertisement_id)
         serializer.save(user=self.request.user, advertisement=advertisement)
+
+# View для обновления и удаления одного комментария
+class AdResponseDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = AdResponse.objects.select_related('user', 'user__role').all() # Оптимизация
+    serializer_class = AdResponseSerializer
+    permission_classes = [IsOwnerOrAdminOrReadOnly] # Кастомное разрешение
+    lookup_url_kwarg = 'response_id' # Имя параметра в URL для ID комментария
+
+    def get_queryset(self):
+        # Дополнительно фильтруем по ID объявления из URL, чтобы убедиться,
+        # что комментарий принадлежит указанному объявлению
+        ad_id = self.kwargs.get('ad_id')
+        return super().get_queryset().filter(advertisement_id=ad_id)
+        
+        
+class ArticleListCreateAPIView(generics.ListCreateAPIView):
+    queryset = Article.objects.select_related('author').prefetch_related('categories').order_by('-publication_date')
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    # filterset_class = ArticleFilter # Если будет отдельный класс фильтров для статей
+    search_fields = ['title', 'content', 'author__display_name']
+    ordering_fields = ['publication_date', 'title']
+    ordering = ['-publication_date']
+    pagination_class = StandardResultsSetPagination # Используем тот же пагинатор, что и для списка статей
+    permission_classes = [CanManageArticles] # Разрешение на создание
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return ArticleManageSerializer
+        return ArticleListSerializer # Для GET запросов (список)
+
+    # perform_create вызывается в ArticleManageSerializer
+
+
+# ArticleDetailAPIView теперь для RETRIEVE, UPDATE, DESTROY
+class ArticleRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Article.objects.select_related('author').prefetch_related('categories', 'comments__user').all()
+    permission_classes = [CanManageArticles] # Разрешение на редактирование/удаление
+    lookup_field = 'id'
+
+    def get_serializer_class(self):
+        if self.request.method in ['PUT', 'PATCH']:
+            return ArticleManageSerializer
+        return ArticleDetailSerializer # Для GET запроса (детали)
+
+    # def perform_update(self, serializer):
+    #     # Можно добавить логику, например, не менять автора
+    #     # serializer.save(author=self.request.user) # Если автор может меняться
+    #     serializer.save()
+
+    # def perform_destroy(self, instance):
+    #     instance.delete()
+
+
+class ArticleCommentListCreateAPIView(generics.ListCreateAPIView):
+    serializer_class = CommentSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly] # Создавать могут только авторизованные
+
+    def get_queryset(self):
+        article_id = self.kwargs.get('article_id')
+        return Comment.objects.filter(article_id=article_id).select_related('user').order_by('-date_created')
+
+    def perform_create(self, serializer):
+        article_id = self.kwargs.get('article_id')
+        article = generics.get_object_or_404(Article, pk=article_id)
+        serializer.save(user=self.request.user, article=article)
+
+
+class ArticleCommentRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = CommentSerializer
+    permission_classes = [IsOwnerOrAdminOrReadOnly]
+    lookup_url_kwarg = 'comment_id'
+
+    def get_queryset(self):
+        article_id = self.kwargs.get('article_id')
+        return Comment.objects.filter(article_id=article_id).select_related('user')

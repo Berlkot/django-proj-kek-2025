@@ -73,6 +73,11 @@
               </select>
             </div>
           </div>
+          <div class="text-right mb-4" v-if="authStore.isAuthenticated && authStore.user?.is_staff">
+            <router-link :to="{ name: 'ArticleCreate' }" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md">
+              Создать статью
+            </router-link>
+          </div>
         </div>
       </div>
 
@@ -131,6 +136,7 @@ import axios from 'axios';
 import { useRoute, useRouter } from 'vue-router';
 import ArticleGridCard from '../components/ArticleGridCard.vue';
 import type { ArticleCategory } from '../types'
+import { useAuthStore } from '../stores/auth';
 // FontAwesomeIcon не используется напрямую в этом шаблоне, но иконка поиска есть
 // import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'; // Если нужна здесь
 
@@ -150,7 +156,7 @@ interface PaginatedArticlesResponse {
   previous: string | null;
   results: Article[];
 }
-
+const authStore = useAuthStore();
 const articles = ref<Article[]>([]);
 const categories = ref<ArticleCategory[]>([]);
 const loading = ref(true);

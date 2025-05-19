@@ -18,6 +18,11 @@ class Region(models.Model):
 
 class Role(models.Model):
     name = models.CharField(_("название роли"), max_length=50, unique=True)
+    can_create_article = models.BooleanField(_("может создавать статьи"), default=False)
+    can_edit_own_article = models.BooleanField(_("может редактировать свои статьи"), default=False) # Если авторы - не только модеры
+    can_edit_any_article = models.BooleanField(_("может редактировать любые статьи"), default=False)
+    can_delete_own_article = models.BooleanField(_("может удалять свои статьи"), default=False) # Аналогично
+    can_delete_any_article = models.BooleanField(_("может удалять любые статьи"), default=False)
 
     class Meta:
         verbose_name = _("роль")
