@@ -2,6 +2,7 @@ import './styles/tailwind.css'
 import 'vite/modulepreload-polyfill'
 
 import App from './App.vue'
+import { useAuthStore } from './stores/auth';
 
 import router from './router'
 import { createApp } from 'vue'
@@ -55,7 +56,18 @@ library.add(
 const app = createApp(App)
 
 app.use(createPinia())
-app.use(router)
-app.component('font-awesome-icon', FontAwesomeIcon)
 
-app.mount('#app')
+// Инициализация состояния аутентификации ПОСЛЕ создания Pinia
+const authStore = useAuthStore(); // Получаем экземпляр хранилища
+authStore.initAuth().then(() => { // Вызываем initAuth для загрузки пользователя, если токен есть
+    app.use(router); // Подключаем роутер после возможной асинхронной инициализации
+    app.component('font-awesome-icon', FontAwesomeIcon);
+    app.mount('#app');
+}).catch(error => { // Обработка ошибок инициализации, если необходимо
+    console.error("Auth initialization failed:", error);
+    // Можно показать пользователю сообщение об ошибке или выполнить другие действия
+    // Важно все равно смонтировать приложение
+    app.use(router);
+    app.component('font-awesome-icon', FontAwesomeIcon);
+    app.mount('#app');
+});

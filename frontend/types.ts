@@ -136,3 +136,17 @@ export interface AdvertisementDetail {
   responses: AdResponse[];
   location: string; // Имя региона пользователя автора или "Не указано"
 }
+
+export interface User {
+  id: number;
+  email: string;
+  username: string;
+  display_name?: string;
+  first_name?: string;
+  last_name?: string;
+  avatar_url?: string | null;
+  role?: string | null;
+  region?: string | null;
+  phone_number?: string | null;
+  is_staff?: boolean;
+}
