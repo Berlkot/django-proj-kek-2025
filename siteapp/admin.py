@@ -4,7 +4,8 @@ from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from .models import (
     Region, Role, User, AdStatus, Species, Breed, Animal, Shelter,
-    AnimalInShelter, Advertisement, AdPhoto, AdResponse, Article, Comment, Volunteering
+    AnimalInShelter, Advertisement, AdPhoto, AdResponse, Article, Comment, Volunteering,
+    ArticleCategory, AnimalColor, AnimalGender
 )
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
@@ -21,22 +22,33 @@ class RoleAdmin(admin.ModelAdmin):
 
 # Custom User Admin
 class UserAdmin(BaseUserAdmin):
-    list_display = ('email', 'username', 'display_name', 'role', 'region', 'is_staff', 'is_active')
+    list_display = ('email', 'username', 'display_name', 'role', 'region', 'is_staff', 'is_active', 'avatar_preview_list')
     list_filter = ('is_staff', 'is_superuser', 'is_active', 'groups', 'role', 'region')
     search_fields = ('email', 'username', 'display_name')
     ordering = ('email',)
     raw_id_fields = ('role', 'region') # If many roles/regions
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
-        (_('Personal info'), {'fields': ('username', 'display_name', 'first_name', 'last_name')}),
+        (_('Personal info'), {'fields': ('username', 'display_name', 'first_name', 'last_name', 'avatar', 'avatar_preview_admin')}), # Added avatar
         (_('Permissions'), {
             'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
         }),
         (_('Important dates'), {'fields': ('last_login', 'date_joined')}),
-        (_('Custom Fields'), {'fields': ('role', 'region')}), # Add custom fields here
+        (_('Custom Fields'), {'fields': ('role', 'region')}),
     )
-    # If you use 'username' as USERNAME_FIELD, and added 'email' as extra, add 'email' to fieldsets.
-    # If email is USERNAME_FIELD (as in model), then 'username' can be an optional field.
+    readonly_fields = BaseUserAdmin.readonly_fields + ('avatar_preview_admin',) # Add avatar_preview_admin to readonly
+
+    @admin.display(description=_("Аватар (форма)"))
+    def avatar_preview_admin(self, obj):
+        if obj.avatar:
+            return format_html('<img src="{}" style="max-height: 100px; max-width: 100px;" />', obj.avatar.url)
+        return _("Нет аватара")
+
+    @admin.display(description=_("Аватар"))
+    def avatar_preview_list(self, obj):
+        if obj.avatar:
+            return format_html('<img src="{}" style="max-height: 40px; max-width: 40px; border-radius: 50%;" />', obj.avatar.url)
+        return _("Нет")
 
 admin.site.register(User, UserAdmin)
 
@@ -66,14 +78,24 @@ class AnimalInShelterInline(admin.TabularInline): # Or StackedInline
     verbose_name = _("пребывание в приюте")
     verbose_name_plural = _("пребывания в приютах")
 
+@admin.register(AnimalColor)
+class AnimalColorAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name')
+    search_fields = ('name',)
+
+@admin.register(AnimalGender)
+class AnimalGenderAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name')
+    search_fields = ('name',)
+
 @admin.register(Animal)
 class AnimalAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'species', 'breed', 'birth_date')
-    list_filter = ('species', 'breed')
-    search_fields = ('name', 'species__name', 'breed__name')
-    raw_id_fields = ('species', 'breed') # If many species/breeds
+    list_display = ('id', 'name', 'species', 'breed', 'color', 'gender', 'birth_date') # Добавлены color, gender
+    list_filter = ('species', 'breed', 'color', 'gender') # Добавлены color, gender
+    search_fields = ('name', 'species__name', 'breed__name', 'color__name', 'gender__name')
+    raw_id_fields = ('species', 'breed', 'color', 'gender') # Добавлены color, gender
     inlines = [AnimalInShelterInline]
-    date_hierarchy = 'birth_date' # If birth_date is often known
+    date_hierarchy = 'birth_date'
 
 # Inlines for Shelter
 class VolunteeringForShelterInline(admin.TabularInline):
@@ -173,7 +195,7 @@ class AdPhotoAdmin(admin.ModelAdmin):
     @admin.display(description=_("Объявление"))
     def advertisement_link(self, obj):
         from django.urls import reverse
-        link = reverse("admin:siteapps_advertisement_change", args=[obj.advertisement.id])
+        link = reverse("admin:siteapp_advertisement_change", args=[obj.advertisement.id])
         return format_html('<a href="{}">{}</a>', link, str(obj.advertisement))
 
     @admin.display(description=_("Превью"))
@@ -194,7 +216,7 @@ class AdResponseAdmin(admin.ModelAdmin):
     @admin.display(description=_("Объявление"))
     def advertisement_link(self, obj):
         from django.urls import reverse
-        link = reverse("admin:siteapps_advertisement_change", args=[obj.advertisement.id])
+        link = reverse("admin:siteapp_advertisement_change", args=[obj.advertisement.id])
         return format_html('<a href="{}">{}</a>', link, str(obj.advertisement))
 
     @admin.display(description=_("Email пользователя"), ordering='user__email')
@@ -213,17 +235,30 @@ class CommentInline(admin.TabularInline): # Or StackedInline
     readonly_fields = ('date_created',)
     raw_id_fields = ('user',)
 
+
+@admin.register(ArticleCategory)
+class ArticleCategoryAdmin(admin.ModelAdmin):
+    list_display = ('name', 'slug')
+    search_fields = ('name',)
+    prepopulated_fields = {'slug': ('name',)} # Автозаполнение слага на основе имени
+
 @admin.register(Article)
 class ArticleAdmin(admin.ModelAdmin):
-    list_display = ('id', 'title', 'author_email', 'publication_date_formatted', 'comment_count', 'image_preview_list')
-    list_filter = ('publication_date', 'author')
+    list_display = ('id', 'title', 'author_email', 'publication_date_formatted', 'comment_count', 'image_preview_list', 'list_categories')
+    list_filter = ('publication_date', 'author', 'categories') # ДОБАВЛЕН фильтр по категориям
     search_fields = ('title', 'content', 'author__email', 'author__username')
     raw_id_fields = ('author',)
     date_hierarchy = 'publication_date'
     inlines = [CommentInline]
-    readonly_fields = ('publication_date', 'image_preview_admin') 
-    fields = ('title', 'author', 'content', 'main_image', 'image_preview_admin', 'publication_date') 
-    # prepopulated_fields = {"slug": ("title",)}
+    readonly_fields = ('publication_date', 'image_preview_admin')
+    # Используем filter_horizontal для удобного выбора ManyToMany категорий
+    filter_horizontal = ('categories',)
+    fields = ('title', 'author', 'categories', 'content', 'main_image', 'image_preview_admin', 'publication_date')
+    # prepopulated_fields = {"slug": ("title",)} # Если у статьи есть slug
+
+    @admin.display(description=_("Категории"))
+    def list_categories(self, obj):
+        return ", ".join([c.name for c in obj.categories.all()])
 
     @admin.display(description=_("Email автора"), ordering='author__email')
     def author_email(self, obj):
@@ -261,7 +296,7 @@ class CommentAdmin(admin.ModelAdmin):
     @admin.display(description=_("Статья"), ordering='article__title')
     def article_link(self, obj):
         from django.urls import reverse
-        link = reverse("admin:siteapps_article_change", args=[obj.article.id])
+        link = reverse("admin:siteapp_article_change", args=[obj.article.id])
         return format_html('<a href="{}">{}</a>', link, str(obj.article))
 
     @admin.display(description=_("Email пользователя"), ordering='user__email')
