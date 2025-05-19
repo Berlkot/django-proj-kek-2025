@@ -6,6 +6,8 @@ from .models import (
 )
 from django.utils import timezone
 from dateutil.relativedelta import relativedelta
+from djoser.serializers import UserCreateSerializer as BaseUserCreateSerializer
+from djoser.serializers import UserSerializer as BaseUserSerializer
 # Вспомогательный сериализатор для фото, если нужно будет больше деталей
 class AdPhotoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -399,3 +401,39 @@ class AdvertisementDetailSerializer(serializers.ModelSerializer):
         if obj.user and obj.user.region:
             return obj.user.region.name
         return "Не указано"
+
+class UserCreateSerializer(BaseUserCreateSerializer):
+    # Можно добавить дополнительные поля для регистрации, если они нужны и не являются частью AbstractUser
+    # Например, display_name, region_id, role_id
+    # region = serializers.PrimaryKeyRelatedField(queryset=Region.objects.all(), allow_null=True, required=False)
+    # role = serializers.PrimaryKeyRelatedField(queryset=Role.objects.all(), allow_null=True, required=False)
+
+    class Meta(BaseUserCreateSerializer.Meta):
+        model = User
+        fields = ('id', 'email', 'username', 'password', 'display_name', 'first_name', 'last_name', 'region', 'role')
+        # Добавили 'display_name', 'first_name', 'last_name', 'region', 'role'
+        # 'region' и 'role' должны принимать ID при создании.
+
+    # Если вы хотите автоматически создавать display_name из username, если он не предоставлен:
+    # def create(self, validated_data):
+    #     if 'display_name' not in validated_data or not validated_data['display_name']:
+    #         validated_data['display_name'] = validated_data.get('username')
+    #     return super().create(validated_data)
+
+
+class CurrentUserSerializer(BaseUserSerializer):
+    # Сериализатор для эндпоинта /users/me/
+    # Djoser по умолчанию использует email, username. Добавим нужные нам поля.
+    avatar_url = serializers.CharField(read_only=True) # Используем свойство из модели
+    role = serializers.StringRelatedField(read_only=True)
+    region = serializers.StringRelatedField(read_only=True)
+
+    class Meta(BaseUserSerializer.Meta):
+        model = User
+        fields = (
+            'id', 'email', 'username', 'display_name', 'first_name', 'last_name',
+            'avatar_url', 'role', 'region', 'phone_number', 'is_staff'
+            # Добавьте другие поля, которые хотите видеть для /users/me/
+        )
+        read_only_fields = ('email', 'is_staff', 'role', 'region', 'avatar_url') # email нельзя менять через /me/ по умолчанию
+        # Если хотите разрешить редактирование каких-то полей через /users/me/ (PUT/PATCH), уберите их из read_only_fields

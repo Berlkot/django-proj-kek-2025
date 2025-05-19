@@ -2,6 +2,9 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomePage from '../views/HomePage.vue'
 import ArticlesPage from '../views/ArticlesPage.vue'
 import AdvertisementsPage from '../views/AdvertisementsPage.vue'
+import LoginPage from '../views/LoginPage.vue';
+import RegisterPage from '../views/RegisterPage.vue';
+import { useAuthStore } from '../stores/auth'; // Импортируем хранилище
 
 // Определяем тип для маршрутов для лучшей типизации
 const routes = [
@@ -44,20 +47,12 @@ const routes = [
     component: HomePage, // ЗАГЛУШКА
   },
   {
-    path: '/login',
-    name: 'Login',
-    component: HomePage, // ЗАГЛУШКА
-  },
-  {
     path: '/post-ad', // Для кнопки "Разместить" в AppHeader
     name: 'PostAd',
     component: HomePage, // ЗАГЛУШКА
   },
-  {
-    path: '/register', // Для кнопки "Регистрация" в мобильном меню AppHeader
-    name: 'Register',
-    component: HomePage, // ЗАГЛУШКА
-  },
+  { path: '/login', name: 'Login', component: LoginPage, meta: { guestOnly: true } },
+  { path: '/register', name: 'Register', component: RegisterPage, meta: { guestOnly: true } },
   {
     path: '/privacy',
     name: 'Privacy',
@@ -89,5 +84,23 @@ const router = createRouter({
     }
   },
 })
+
+// Навигационный страж (Navigation Guard)
+router.beforeEach((to, from, next) => {
+  const authStore = useAuthStore(); // Получаем доступ к хранилищу
+
+  // Если маршрут требует аутентификации и пользователь не аутентифицирован
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    next({ name: 'Login', query: { next: to.fullPath } }); // Перенаправляем на логин, сохраняя путь
+  }
+  // Если маршрут только для гостей (логин, регистрация) и пользователь аутентифицирован
+  else if (to.meta.guestOnly && authStore.isAuthenticated) {
+    next({ name: 'Home' }); // Перенаправляем на главную
+  }
+  // В остальных случаях разрешаем навигацию
+  else {
+    next();
+  }
+});
 
 export default router
