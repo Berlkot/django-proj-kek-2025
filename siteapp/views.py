@@ -1,16 +1,16 @@
 # siteapp/views_api.py
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status, generics, filters # generics и filters добавлены
+from rest_framework import status, generics, filters, permissions # generics и filters добавлены
 from rest_framework.pagination import PageNumberPagination # Добавлено для пагинации
 from django_filters.rest_framework import DjangoFilterBackend
 
-from .models import Advertisement, Article, AdStatus, ArticleCategory, Region, Species, AnimalColor, AnimalGender
+from .models import Advertisement, Article, AdStatus, ArticleCategory, Region, Species, AnimalColor, AnimalGender, AdResponse
 from .serializers import (
     HomePageAdSerializer, HomePageArticleSerializer,
     ArticleListSerializer, ArticleCategorySerializer, ArticleDetailSerializer,
     AdvertisementListSerializer, RegionSerializer, SpeciesSerializer, AdStatusSerializer,
-    AnimalColorSerializer, AnimalGenderSerializer
+    AnimalColorSerializer, AnimalGenderSerializer, AdvertisementDetailSerializer, AdResponseSerializer
 )
 
 from .filters import AdvertisementFilter, AGE_CHOICES
@@ -128,3 +128,27 @@ class FilterOptionsAPIView(APIView):
             # Добавьте сюда другие опции, если они появятся
         }
         return Response(data, status=status.HTTP_200_OK)
+
+
+
+class AdvertisementDetailAPIView(generics.RetrieveAPIView):
+    queryset = Advertisement.objects.select_related(
+        'animal__species', 'animal__breed', 'animal__color', 'animal__gender',
+        'user__region', 'user__role', 'status'
+    ).prefetch_related(
+        'photos',
+        'responses__user__role', 'responses__user__region' # Для вложенных данных откликов
+    ).all()
+    serializer_class = AdvertisementDetailSerializer
+    lookup_field = 'id'
+
+
+class AdResponseCreateAPIView(generics.CreateAPIView):
+    queryset = AdResponse.objects.all()
+    serializer_class = AdResponseSerializer
+    permission_classes = [permissions.IsAuthenticated] # Только авторизованные могут оставлять отклики
+
+    def perform_create(self, serializer):
+        advertisement_id = self.kwargs.get('ad_id') # Получаем ID объявления из URL
+        advertisement = generics.get_object_or_404(Advertisement, pk=advertisement_id)
+        serializer.save(user=self.request.user, advertisement=advertisement)

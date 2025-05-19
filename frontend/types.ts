@@ -89,3 +89,50 @@ export interface SelectedFilters {
   gender: number | null;
   // Добавьте другие по мере необходимости
 }
+export interface AdAuthor { // Используем для автора объявления и автора отклика
+  id: number;
+  display_name: string;
+  role: string | null; // Имя роли
+  phone_number: string | null;
+  email: string;
+  avatar_url: string | null;
+  region: { id: number; name: string } | null; // Предполагаем, что регион передается как объект или имя
+}
+
+export interface AdDetailAnimal {
+  id: number;
+  name: string | null;
+  species: string;
+  breed: string | null;
+  color: string | null;
+  gender: string | null;
+  birth_date: string | null; // ISO
+  age_years_months: string; // "1 год, 2 месяца"
+}
+
+export interface AdPhoto {
+  id: number;
+  image_url: string;
+}
+
+export interface AdResponse {
+  id: number;
+  user: AdAuthor; // Автор отклика
+  message: string;
+  date_created: string; // ISO
+}
+
+export interface AdvertisementDetail {
+  id: number;
+  title: string;
+  description: string;
+  animal: AdDetailAnimal;
+  user: AdAuthor; // Автор объявления
+  status: string; // Имя статуса (тип объявления)
+  publication_date: string; // ISO
+  latitude: number | null;
+  longitude: number | null;
+  photos: AdPhoto[];
+  responses: AdResponse[];
+  location: string; // Имя региона пользователя автора или "Не указано"
+}
