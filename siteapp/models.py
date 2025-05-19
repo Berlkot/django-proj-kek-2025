@@ -35,6 +35,7 @@ class User(AbstractUser):
     # If 'имя' is meant to be a display name, we can add it:
     display_name = models.CharField(_("отображаемое имя"), max_length=150, blank=True)
     email = models.EmailField(_("email"), unique=True) # Make email unique and primary identifier
+    phone_number = models.CharField(_("номер телефона"), max_length=20, blank=True, null=True)
     # 'пароль_hash' is handled by Django's password management.
     role = models.ForeignKey(
         Role,
@@ -234,16 +235,17 @@ class AdPhoto(models.Model): # Объявление_Фото
             return self.image.url
         return None
 
-class AdResponse(models.Model): # Отклик
+class AdResponse(models.Model): # Отклик / Комментарий к объявлению
     advertisement = models.ForeignKey(Advertisement, related_name='responses', on_delete=models.CASCADE, verbose_name=_("объявление"))
-    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name=_("пользователь"))
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name=_("пользователь")) # Автор отклика/комментария
     message = models.TextField(_("сообщение"))
     date_created = models.DateTimeField(_("дата отклика"), auto_now_add=True)
+    # parent_response = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='replies') # Для вложенных комментариев, если нужно
 
     class Meta:
         verbose_name = _("отклик на объявление")
         verbose_name_plural = _("отклики на объявления")
-        ordering = ['-date_created']
+        ordering = ['-date_created'] # Сначала новые комментарии
 
     def __str__(self):
         return f"{_('Отклик от')} {self.user.get_full_name()} {_('на объявление ID')}: {self.advertisement.id}"

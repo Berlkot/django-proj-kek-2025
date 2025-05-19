@@ -22,21 +22,21 @@ class RoleAdmin(admin.ModelAdmin):
 
 # Custom User Admin
 class UserAdmin(BaseUserAdmin):
-    list_display = ('email', 'username', 'display_name', 'role', 'region', 'is_staff', 'is_active', 'avatar_preview_list')
+    list_display = ('email', 'username', 'display_name', 'role', 'region', 'phone_number', 'is_staff', 'is_active', 'avatar_preview_list')
     list_filter = ('is_staff', 'is_superuser', 'is_active', 'groups', 'role', 'region')
     search_fields = ('email', 'username', 'display_name')
     ordering = ('email',)
     raw_id_fields = ('role', 'region') # If many roles/regions
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
-        (_('Personal info'), {'fields': ('username', 'display_name', 'first_name', 'last_name', 'avatar', 'avatar_preview_admin')}), # Added avatar
+        (_('Personal info'), {'fields': ('username', 'display_name', 'first_name', 'last_name', 'phone_number', 'avatar', 'avatar_preview_admin')}), # Added phone_number
         (_('Permissions'), {
             'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
         }),
         (_('Important dates'), {'fields': ('last_login', 'date_joined')}),
         (_('Custom Fields'), {'fields': ('role', 'region')}),
     )
-    readonly_fields = BaseUserAdmin.readonly_fields + ('avatar_preview_admin',) # Add avatar_preview_admin to readonly
+    readonly_fields = BaseUserAdmin.readonly_fields + ('avatar_preview_admin',)
 
     @admin.display(description=_("Аватар (форма)"))
     def avatar_preview_admin(self, obj):

@@ -2,11 +2,10 @@
 from rest_framework import serializers
 from .models import (
     Advertisement, AdPhoto, Article, User, Region, Species, AdStatus,
-    AnimalColor, AnimalGender, Animal, ArticleCategory
+    AnimalColor, AnimalGender, Animal, AdResponse, Role, ArticleCategory # Добавлены Animal, AdResponse, Role
 )
 from django.utils import timezone
 from dateutil.relativedelta import relativedelta
-
 # Вспомогательный сериализатор для фото, если нужно будет больше деталей
 class AdPhotoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -274,3 +273,129 @@ class AnimalGenderSerializer(serializers.ModelSerializer):
     class Meta:
         model = AnimalGender
         fields = ['id', 'name']
+        
+        
+class AdDetailAuthorSerializer(serializers.ModelSerializer):
+    avatar_url = serializers.SerializerMethodField()
+    role = serializers.StringRelatedField() # Имя роли
+
+    class Meta:
+        model = User
+        fields = ['id', 'display_name', 'role', 'phone_number', 'email', 'avatar_url', 'region'] # Добавлены role, phone_number, email, region (id региона)
+        # 'region' здесь вернет ID, если нужно имя, можно использовать serializers.StringRelatedField(source='region')
+        # или кастомный метод, но для API лучше передавать ID, а на фронте иметь список регионов.
+        # Но для простоты пока оставим StringRelatedField, если он уже есть у User.
+        # Если у User поле region это ForeignKey, тоserializers.StringRelatedField() вернет имя.
+
+    def get_avatar_url(self, obj):
+        if obj.avatar and hasattr(obj.avatar, 'url'):
+            request = self.context.get('request')
+            return request.build_absolute_uri(obj.avatar.url) if request else obj.avatar.url
+        return None
+
+# Для информации о животном в деталях объявления
+class AdDetailAnimalSerializer(serializers.ModelSerializer):
+    species = serializers.StringRelatedField()
+    breed = serializers.StringRelatedField()
+    color = serializers.StringRelatedField()
+    gender = serializers.StringRelatedField()
+    age_years_months = serializers.SerializerMethodField() # Вычисляемый возраст
+
+    class Meta:
+        model = Animal
+        fields = ['id', 'name', 'species', 'breed', 'color', 'gender', 'birth_date', 'age_years_months']
+
+    def get_age_years_months(self, obj):
+        if not obj.birth_date:
+            return "Неизвестно"
+        
+        today = timezone.now().date()
+        delta = relativedelta(today, obj.birth_date)
+        
+        years = delta.years
+        months = delta.months
+        # days = delta.days # Дни пока не используем в строке
+
+        age_parts = []
+        if years > 0:
+            if years == 1:
+                age_parts.append(f"{years} год")
+            elif 1 < years < 5:
+                age_parts.append(f"{years} года")
+            else:
+                age_parts.append(f"{years} лет")
+        
+        if months > 0:
+            if months == 1:
+                age_parts.append(f"{months} месяц")
+            elif 1 < months < 5:
+                age_parts.append(f"{months} месяца")
+            else:
+                age_parts.append(f"{months} месяцев")
+        
+        if not age_parts: # Если очень молодой (меньше месяца)
+            # Считаем дни, если животному меньше месяца
+            days_total = (today - obj.birth_date).days
+            if days_total == 1:
+                 return f"{days_total} день"
+            elif days_total < 5 :
+                 return f"{days_total} дня"
+            elif days_total < 21 : # 5-20 дней
+                 return f"{days_total} дней"
+            elif days_total % 10 == 1:
+                 return f"{days_total} день"
+            elif days_total % 10 in [2,3,4]:
+                 return f"{days_total} дня"
+            else: # 25-30 дней
+                 return f"{days_total} дней"
+
+
+        return ", ".join(age_parts) if age_parts else "Меньше месяца"
+
+# Для фотографий объявления в деталях
+class AdDetailPhotoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AdPhoto
+        fields = ['id', 'image_url'] # Используем свойство image_url из модели
+
+# Для комментариев/откликов
+class AdResponseSerializer(serializers.ModelSerializer):
+    user = AdDetailAuthorSerializer(read_only=True) # Информация об авторе комментария
+    date_created = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%S.%fZ", read_only=True)
+
+    class Meta:
+        model = AdResponse
+        fields = ['id', 'user', 'message', 'date_created']
+
+
+class AdvertisementDetailSerializer(serializers.ModelSerializer):
+    animal = AdDetailAnimalSerializer(read_only=True)
+    user = AdDetailAuthorSerializer(read_only=True) # Автор объявления
+    status = serializers.StringRelatedField()
+    photos = AdDetailPhotoSerializer(many=True, read_only=True)
+    responses = AdResponseSerializer(many=True, read_only=True) # Комментарии/отклики
+    # publication_date форматируется на фронте, передаем как есть
+    publication_date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%S.%fZ", read_only=True)
+    location = serializers.SerializerMethodField() # Регион пользователя, если есть
+
+    class Meta:
+        model = Advertisement
+        fields = [
+            'id',
+            'title',
+            'description', # Полное описание
+            'animal',
+            'user',
+            'status',
+            'publication_date',
+            'latitude',
+            'longitude',
+            'photos',
+            'responses',
+            'location',
+        ]
+
+    def get_location(self, obj):
+        if obj.user and obj.user.region:
+            return obj.user.region.name
+        return "Не указано"

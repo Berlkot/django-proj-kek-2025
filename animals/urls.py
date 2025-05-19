@@ -8,6 +8,8 @@ from django.conf.urls.static import static # Для MEDIA_URL
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('siteapp.urls')),
+    path('auth/', include('djoser.urls')), # Djoser URLS (регистрация, логин, ...)
+    path('auth/', include('djoser.urls.jwt')), # Djoser JWT URLS (создание/обновление токенов)
 
     re_path(r'^((?!media).)*$', TemplateView.as_view(template_name='index.html'), name='app'),
 ]

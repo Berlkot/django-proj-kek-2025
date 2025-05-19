@@ -28,11 +28,11 @@ const routes = [
   },
   // Маршрут для детальной страницы объявления (пока заглушка)
   {
-    path: '/advertisement/:id(\\d+)',
-    name: 'AdvertisementDetail',
-    component: () => import('../views/HomePage.vue'), // ЗАГЛУШКА
-    props: true,
-  },
+     path: '/advertisement/:id(\\d+)',
+     name: 'AdvertisementDetail',
+     component: () => import('../views/AdvertisementDetailPage.vue'), // Ленивая загрузка
+     props: true
+   },
   {
     path: '/rules',
     name: 'Rules',
