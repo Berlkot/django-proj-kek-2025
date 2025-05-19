@@ -3,12 +3,17 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, generics, filters # generics и filters добавлены
 from rest_framework.pagination import PageNumberPagination # Добавлено для пагинации
+from django_filters.rest_framework import DjangoFilterBackend
 
-from .models import Advertisement, Article, AdStatus, ArticleCategory # ArticleCategory добавлено
+from .models import Advertisement, Article, AdStatus, ArticleCategory, Region, Species, AnimalColor, AnimalGender
 from .serializers import (
     HomePageAdSerializer, HomePageArticleSerializer,
-    ArticleListSerializer, ArticleCategorySerializer, ArticleDetailSerializer
+    ArticleListSerializer, ArticleCategorySerializer, ArticleDetailSerializer,
+    AdvertisementListSerializer, RegionSerializer, SpeciesSerializer, AdStatusSerializer,
+    AnimalColorSerializer, AnimalGenderSerializer
 )
+
+from .filters import AdvertisementFilter, AGE_CHOICES
 
 class HomePageDataAPIView(APIView):
     """
@@ -84,3 +89,42 @@ class ArticleDetailAPIView(generics.RetrieveAPIView):
     queryset = Article.objects.select_related('author').all() # prefetch_related('categories') если они нужны
     serializer_class = ArticleDetailSerializer
     lookup_field = 'id' # Используем ID для поиска статьи
+
+class AdsPageNumberPagination(PageNumberPagination):
+    page_size = 12 # По 3 в ряд, 4 ряда = 12 (или сколько вам нужно)
+    page_size_query_param = 'page_size'
+    max_page_size = 48
+
+class AdvertisementListAPIView(generics.ListAPIView):
+    serializer_class = AdvertisementListSerializer
+    pagination_class = AdsPageNumberPagination
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter] # Добавляем OrderingFilter
+    filterset_class = AdvertisementFilter # Используем наш FilterSet
+    
+    # Поля для сортировки. На фронте можно будет передавать ?ordering=publication_date или ?ordering=-publication_date
+    ordering_fields = ['publication_date', 'animal__name'] 
+    ordering = ['-publication_date'] # Сортировка по умолчанию
+
+    def get_queryset(self):
+        # Оптимизируем запросы
+        return Advertisement.objects.select_related(
+            'animal__species', 'animal__breed', 'animal__color', 'animal__gender',
+            'user__region', 'status'
+        ).prefetch_related('photos').all()
+
+
+class FilterOptionsAPIView(APIView):
+    """
+    Возвращает списки возможных значений для фильтров.
+    """
+    def get(self, request, *args, **kwargs):
+        data = {
+            'regions': RegionSerializer(Region.objects.all(), many=True).data,
+            'species': SpeciesSerializer(Species.objects.all(), many=True).data,
+            'ad_statuses': AdStatusSerializer(AdStatus.objects.all(), many=True).data, # Это "Тип объявления"
+            'colors': AnimalColorSerializer(AnimalColor.objects.all(), many=True).data,
+            'genders': AnimalGenderSerializer(AnimalGender.objects.all(), many=True).data,
+            'age_categories': [{'value': choice[0], 'label': choice[1]} for choice in AGE_CHOICES],
+            # Добавьте сюда другие опции, если они появятся
+        }
+        return Response(data, status=status.HTTP_200_OK)

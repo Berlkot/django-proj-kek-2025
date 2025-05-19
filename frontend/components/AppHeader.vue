@@ -7,7 +7,7 @@
 
       <!-- Desktop Navigation -->
       <nav class="hidden md:flex items-center space-x-4 lg:space-x-6 text-gray-700">
-        <router-link to="/ads" class="hover:text-green-600">Объявления</router-link>
+        <router-link :to="{ name: 'Advertisements' }" class="hover:text-green-600" active-class="text-green-600 font-semibold">Объявления</router-link>
         <router-link to="/rules" class="hover:text-green-600">Правила</router-link>
         <router-link to="/contacts" class="hover:text-green-600">Контакты</router-link>
         <router-link :to="{ name: 'Articles' }" class="hover:text-green-600" active-class="text-green-600 font-semibold">Статьи</router-link>
@@ -42,7 +42,7 @@
     >
       <div v-if="isMobileMenuOpen" class="md:hidden absolute top-full left-0 right-0 bg-white shadow-lg z-40">
         <nav class="flex flex-col px-4 pt-2 pb-4 space-y-1 border-t border-gray-200">
-          <router-link @click="closeMobileMenu" to="/ads" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-green-600">Объявления</router-link>
+          <router-link @click="closeMobileMenu" :to="{ name: 'Advertisements' }" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-green-600" active-class="bg-gray-100 text-green-600">Объявления</router-link>
           <router-link @click="closeMobileMenu" to="/rules" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-green-600">Правила</router-link>
           <router-link @click="closeMobileMenu" to="/contacts" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-green-600">Контакты</router-link>
           <router-link @click="closeMobileMenu" :to="{ name: 'Articles' }" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-green-600" active-class="bg-gray-100 text-green-600">Статьи</router-link>

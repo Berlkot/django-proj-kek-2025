@@ -10,7 +10,7 @@ import { createPinia } from 'pinia'
 
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import { faSearch, faMapMarkerAlt, faClock, faChevronRight, faBars } from '@fortawesome/free-solid-svg-icons'
+import { faSearch, faMapMarkerAlt, faClock, faChevronRight, faBars, faTimes } from '@fortawesome/free-solid-svg-icons'
 import { faTelegram, faVk, faWhatsapp, faOdnoklassniki } from '@fortawesome/free-brands-svg-icons'
 
 
@@ -23,7 +23,8 @@ library.add(
     faTelegram,
     faVk,
     faWhatsapp,
-    faOdnoklassniki
+    faOdnoklassniki,
+    faTimes
 )
 
 
