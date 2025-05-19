@@ -2,12 +2,30 @@
 from rest_framework import serializers
 from .models import (
     Advertisement, AdPhoto, Article, User, Region, Species, AdStatus,
-    AnimalColor, AnimalGender, Animal, AdResponse, Role, ArticleCategory # Добавлены Animal, AdResponse, Role
+    AnimalColor, AnimalGender, Animal, AdResponse, Role, ArticleCategory,
+    Comment
 )
 from django.utils import timezone
 from dateutil.relativedelta import relativedelta
 from djoser.serializers import UserCreateSerializer as BaseUserCreateSerializer
 from djoser.serializers import UserSerializer as BaseUserSerializer
+
+
+
+class CommentAuthorSerializer(serializers.ModelSerializer): # Похож на AdDetailAuthorSerializer
+    avatar_url = serializers.CharField(read_only=True) # Из свойства модели User
+    class Meta:
+        model = User
+        fields = ['id', 'display_name', 'avatar_url']
+
+class CommentSerializer(serializers.ModelSerializer):
+    user = CommentAuthorSerializer(read_only=True)
+    date_created = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%S.%fZ", read_only=True)
+
+    class Meta:
+        model = Comment
+        fields = ['id', 'article', 'user', 'text', 'date_created']
+        read_only_fields = ['article', 'user', 'date_created'] # article и user устанавливаются в perform_create
 # Вспомогательный сериализатор для фото, если нужно будет больше деталей
 class AdPhotoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -155,19 +173,14 @@ class ArticleAuthorSerializer(serializers.ModelSerializer):
 class ArticleDetailSerializer(serializers.ModelSerializer):
     author = ArticleAuthorSerializer(read_only=True)
     main_image_url = serializers.SerializerMethodField()
-    # publication_date форматируется на фронтенде, передаем как есть
-    # categories = ArticleCategorySerializer(many=True, read_only=True) # Можно добавить при необходимости
+    categories = ArticleCategorySerializer(many=True, read_only=True) # Если не было
+    comments = CommentSerializer(many=True, read_only=True) # <-- ДОБАВЛЕНО
 
     class Meta:
         model = Article
         fields = [
-            'id',
-            'title',
-            'content', # Полное содержимое статьи (может быть HTML)
-            'publication_date',
-            'author',
-            'main_image_url',
-            # 'categories',
+            'id', 'title', 'content', 'publication_date', 'author',
+            'main_image_url', 'categories', 'comments', # <-- ДОБАВЛЕНО comments
         ]
 
     def get_main_image_url(self, obj):
@@ -437,3 +450,35 @@ class CurrentUserSerializer(BaseUserSerializer):
         )
         read_only_fields = ('email', 'is_staff', 'role', 'region', 'avatar_url') # email нельзя менять через /me/ по умолчанию
         # Если хотите разрешить редактирование каких-то полей через /users/me/ (PUT/PATCH), уберите их из read_only_fields
+
+class ArticleManageSerializer(serializers.ModelSerializer):
+    # author устанавливается автоматически из request.user
+    # categories можно передавать как список ID
+    categories = serializers.PrimaryKeyRelatedField(
+        queryset=ArticleCategory.objects.all(), 
+        many=True, 
+        required=False # Категории могут быть необязательными
+    )
+    # main_image будет обрабатываться как FileUpload
+
+    class Meta:
+        model = Article
+        fields = ['id', 'title', 'content', 'main_image', 'categories', 'author', 'publication_date']
+        read_only_fields = ['id', 'author', 'publication_date'] # author и publication_date устанавливаются автоматически
+
+    def create(self, validated_data):
+        # Устанавливаем автора при создании
+        validated_data['author'] = self.context['request'].user
+        return super().create(validated_data)
+
+    # Метод update по умолчанию должен работать нормально для main_image и categories.
+    # Если main_image передано как null, оно будет очищено (если blank=True, null=True в модели).
+    # Если main_image не передано, оно останется без изменений.
+
+
+
+
+    # Если article не передается в URL, а в данных запроса:
+    # def create(self, validated_data):
+    #     validated_data['user'] = self.context['request'].user
+    #     return super().create(validated_data)

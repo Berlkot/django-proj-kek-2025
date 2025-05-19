@@ -27,6 +27,8 @@ import {
   faTag, // Для клички
   faVenusMars,
   faFilter,
+  faPencilAlt,
+  faTrashAlt
 } from '@fortawesome/free-solid-svg-icons'
 import { faTelegram, faVk, faWhatsapp, faOdnoklassniki } from '@fortawesome/free-brands-svg-icons'
 
@@ -50,9 +52,10 @@ library.add(
   faTelegram,
   faVk,
   faWhatsapp,
-  faOdnoklassniki
+  faOdnoklassniki,
+  faPencilAlt,
+  faTrashAlt
 )
-
 const app = createApp(App)
 
 app.use(createPinia())

@@ -150,3 +150,18 @@ export interface User {
   phone_number?: string | null;
   is_staff?: boolean;
 }
+
+export interface ArticleFormData {
+  id?: number; // Для редактирования
+  title: string;
+  content: string;
+  main_image: File | null; // Для загрузки нового файла
+  main_image_url?: string | null; // Для отображения текущего изображения
+  categories: number[]; // Массив ID категорий
+}
+
+export interface ArticleCategory { // Если еще не определен
+  id: number;
+  name: string;
+  slug: string;
+}
