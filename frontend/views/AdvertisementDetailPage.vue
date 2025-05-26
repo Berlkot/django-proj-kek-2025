@@ -16,12 +16,23 @@
       <!-- Хлебные крошки и название -->
       <div class="bg-white py-4 shadow-sm">
         <div class="container mx-auto px-4">
-          <div class="text-sm text-gray-500 mb-3">
-            <router-link :to="{ name: 'Advertisements' }" class="hover:text-green-600"
-              >Объявления</router-link
-            >
-            <span class="mx-1">»</span>
-            <span class="truncate">{{ ad.title }}</span>
+          <div class="flex justify-between items-start">
+            <div class="text-sm text-gray-500 mb-3">
+              <router-link :to="{ name: 'Advertisements' }" class="hover:text-green-600"
+                >Объявления</router-link
+              >
+              <span class="mx-1">»</span>
+              <span class="truncate">{{ ad.title }}</span>
+            </div>
+            <div v-if="canEditCurrentAd" class="mt-1">
+                          <router-link 
+                            :to="{ name: 'AdvertisementEdit', params: { id: ad.id } }" 
+                            class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 hover:underline bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-md"
+                          >
+                            <font-awesome-icon :icon="['fas', 'pencil-alt']" class="mr-1.5"/> 
+                            Редактировать
+                          </router-link>
+                        </div>
           </div>
           <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-1">{{ ad.title }}</h1>
           <div class="text-xs text-gray-500 flex items-center space-x-3">
@@ -125,75 +136,128 @@
                   <p v-else class="text-gray-600">Местоположение не указано.</p>
                 </div>
                 <div v-show="activeTab === 'comments'">
-                              <h2 class="text-xl font-semibold text-gray-800 mb-4">Комментарии ({{ ad.responses.length }})</h2>
-                              <div v-if="ad.responses.length > 0" class="space-y-4">
-                                <div v-for="response in ad.responses" :key="response.id" class="bg-white p-4 rounded-lg shadow-sm border relative group">
-                                  <div class="flex items-start space-x-3">
-                                    <img :src="response.user.avatar_url || '/images/avatar-placeholder.png'" alt="avatar" class="w-10 h-10 rounded-full object-cover">
-                                    <div>
-                                      <p class="font-semibold text-gray-800">{{ response.user.display_name }}</p>
-                                      <p class="text-xs text-gray-500 mb-1">{{ formatTimeAgo(response.date_created) }}</p>
-                                      
-                                      <!-- Редактирование комментария -->
-                                      <div v-if="editingCommentId === response.id">
-                                        <textarea 
-                                          v-model="editingCommentText" 
-                                          rows="3" 
-                                          class="w-full p-2 border rounded-md focus:ring-green-500 focus:border-green-500 text-sm"
-                                        ></textarea>
-                                        <div class="mt-2 space-x-2">
-                                          <button @click="saveEditedComment(response.id)" :disabled="commentSubmitting" class="text-xs bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded disabled:opacity-50">
-                                            Сохранить
-                                          </button>
-                                          <button @click="cancelEditComment" class="text-xs bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded">
-                                            Отмена
-                                          </button>
-                                        </div>
-                                        <p v-if="editCommentError" class="text-red-500 text-xs mt-1">{{ editCommentError }}</p>
-                                      </div>
-                                      <!-- Отображение комментария -->
-                                      <p v-else class="text-gray-700 text-sm whitespace-pre-line">{{ response.message }}</p>
-                                    </div>
-                                  </div>
-                                  <!-- Кнопки управления комментарием -->
-                                  <div v-if="authStore.isAuthenticated && (authStore.user?.id === response.user.id || authStore.user?.is_staff)" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
-                                    <button 
-                                      v-if="authStore.user?.id === response.user.id" 
-                                      @click="startEditComment(response)" 
-                                      title="Редактировать" 
-                                      class="p-1.5 text-xs text-blue-500 hover:text-blue-700 bg-blue-100 hover:bg-blue-200 rounded"
-                                      :disabled="editingCommentId !== null"
-                                    >
-                                      <font-awesome-icon :icon="['fas', 'pencil-alt']" />
-                                    </button>
-                                    <button 
-                                      @click="deleteComment(response.id)" 
-                                      title="Удалить" 
-                                      class="p-1.5 text-xs text-red-500 hover:text-red-700 bg-red-100 hover:bg-red-200 rounded"
-                                      :disabled="editingCommentId !== null"
-                                    >
-                                      <font-awesome-icon :icon="['fas', 'trash-alt']" />
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                              <p v-else class="text-gray-600">Нет комментариев. Будьте первым!</p>
-                              
-                              <!-- Форма добавления комментария -->
-                              <div class="mt-6 pt-4 border-t">
-                                <h3 class="text-lg font-semibold mb-2">Оставить комментарий</h3>
-                                <div v-if="authStore.isAuthenticated">
-                                  <textarea v-model="newCommentMessage" rows="3" placeholder="Ваш комментарий..." class="w-full p-2 border rounded-md focus:ring-green-500 focus:border-green-500"></textarea>
-                                  <button @click="submitComment" :disabled="commentSubmitting || !newCommentMessage.trim()" class="mt-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md disabled:opacity-50">
-                                    {{ commentSubmitting ? 'Отправка...' : 'Отправить' }}
-                                  </button>
-                                  <p v-if="commentError" class="text-red-500 text-sm mt-1">{{ commentError }}</p>
-                                </div>
-                                <div v-else>
-                                  <p class="text-sm text-gray-600">Чтобы оставить комментарий, пожалуйста, <router-link :to="{name: 'Login', query: { next: route.fullPath }}" class="text-green-600 hover:underline">войдите</router-link> или <router-link :to="{name: 'Register', query: { next: route.fullPath }}" class="text-green-600 hover:underline">зарегистрируйтесь</router-link>.</p>
-                                </div>
-                              </div>
+                  <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                    Комментарии ({{ ad.responses.length }})
+                  </h2>
+                  <div v-if="ad.responses.length > 0" class="space-y-4">
+                    <div
+                      v-for="response in ad.responses"
+                      :key="response.id"
+                      class="bg-white p-4 rounded-lg shadow-sm border relative group"
+                    >
+                      <div class="flex items-start space-x-3">
+                        <img
+                          :src="response.user.avatar_url || '/images/avatar-placeholder.png'"
+                          alt="avatar"
+                          class="w-10 h-10 rounded-full object-cover"
+                        />
+                        <div>
+                          <p class="font-semibold text-gray-800">
+                            {{ response.user.display_name }}
+                          </p>
+                          <p class="text-xs text-gray-500 mb-1">
+                            {{ formatTimeAgo(response.date_created) }}
+                          </p>
+
+                          <!-- Редактирование комментария -->
+                          <div v-if="editingCommentId === response.id">
+                            <textarea
+                              v-model="editingCommentText"
+                              rows="3"
+                              class="w-full p-2 border rounded-md focus:ring-green-500 focus:border-green-500 text-sm"
+                            ></textarea>
+                            <div class="mt-2 space-x-2">
+                              <button
+                                @click="saveEditedComment(response.id)"
+                                :disabled="commentSubmitting"
+                                class="text-xs bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded disabled:opacity-50"
+                              >
+                                Сохранить
+                              </button>
+                              <button
+                                @click="cancelEditComment"
+                                class="text-xs bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded"
+                              >
+                                Отмена
+                              </button>
                             </div>
+                            <p v-if="editCommentError" class="text-red-500 text-xs mt-1">
+                              {{ editCommentError }}
+                            </p>
+                          </div>
+                          <!-- Отображение комментария -->
+                          <p v-else class="text-gray-700 text-sm whitespace-pre-line">
+                            {{ response.message }}
+                          </p>
+                        </div>
+                      </div>
+                      <!-- Кнопки управления комментарием -->
+                      <div
+                        v-if="authStore.isAuthenticated && authStore.user" 
+                        class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1"
+                      >
+                        <button
+                        v-if="authStore.user.id === response.user.id && (authStore.user.role_permissions?.can_edit_own_comment || authStore.user.is_staff)" 
+                          @click="startEditComment(response)"
+                          title="Редактировать"
+                          class="p-1.5 text-xs text-blue-500 hover:text-blue-700 bg-blue-100 hover:bg-blue-200 rounded"
+                          :disabled="editingCommentId !== null"
+                        >
+                          <font-awesome-icon :icon="['fas', 'pencil-alt']" />
+                        </button>
+                        <button
+                          v-if="(authStore.user.id === response.user.id && authStore.user.role_permissions?.can_delete_own_comment) || authStore.user.is_staff || authStore.user.role_permissions?.can_delete_any_comment" 
+                          @click="deleteComment(response.id)"
+                          title="Удалить"
+                          class="p-1.5 text-xs text-red-500 hover:text-red-700 bg-red-100 hover:bg-red-200 rounded"
+                          :disabled="editingCommentId !== null"
+                        >
+                          <font-awesome-icon :icon="['fas', 'trash-alt']" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <p v-else class="text-gray-600">Нет комментариев. Будьте первым!</p>
+
+                  <!-- Форма добавления комментария -->
+                  <div class="mt-6 pt-4 border-t">
+                    <h3 class="text-lg font-semibold mb-2">Оставить комментарий</h3>
+                    <div v-if="authStore.isAuthenticated">
+                      <textarea
+                        v-model="newCommentMessage"
+                        rows="3"
+                        placeholder="Ваш комментарий..."
+                        class="w-full p-2 border rounded-md focus:ring-green-500 focus:border-green-500"
+                      ></textarea>
+                      <button
+                        @click="submitComment"
+                        :disabled="commentSubmitting || !newCommentMessage.trim()"
+                        class="mt-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md disabled:opacity-50"
+                      >
+                        {{ commentSubmitting ? 'Отправка...' : 'Отправить' }}
+                      </button>
+                      <p v-if="commentError" class="text-red-500 text-sm mt-1">
+                        {{ commentError }}
+                      </p>
+                    </div>
+                    <div v-else>
+                      <p class="text-sm text-gray-600">
+                        Чтобы оставить комментарий, пожалуйста,
+                        <router-link
+                          :to="{ name: 'Login', query: { next: route.fullPath } }"
+                          class="text-green-600 hover:underline"
+                          >войдите</router-link
+                        >
+                        или
+                        <router-link
+                          :to="{ name: 'Register', query: { next: route.fullPath } }"
+                          class="text-green-600 hover:underline"
+                          >зарегистрируйтесь</router-link
+                        >.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -261,145 +325,166 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import axios from 'axios';
-import ImageGallery from '../components/ImageGallery.vue';
-import { formatTimeAgo, formatDate } from '../utils/time';
-import type { AdvertisementDetail, AdResponse, AdAuthor } from '../types';
-import { useAuthStore } from '../stores/auth'; // Импорт хранилища аутентификации
+import { ref, onMounted, computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import axios from 'axios'
+import ImageGallery from '../components/ImageGallery.vue'
+import { formatTimeAgo, formatDate } from '../utils/time'
+import type { AdvertisementDetail, AdResponse, AdAuthor } from '../types'
+import { useAuthStore } from '../stores/auth' // Импорт хранилища аутентификации
 const props = defineProps<{
-  id: string | number;
-}>();
+  id: string | number
+}>()
 
-const ad = ref<AdvertisementDetail | null>(null);
-const loading = ref(true);
-const error = ref<string | null>(null);
-const activeTab = ref('description');
+const ad = ref<AdvertisementDetail | null>(null)
+const loading = ref(true)
+const error = ref<string | null>(null)
+const activeTab = ref('description')
 
-const newCommentMessage = ref('');
-const commentSubmitting = ref(false);
-const commentError = ref<string | null>(null);
+const newCommentMessage = ref('')
+const commentSubmitting = ref(false)
+const commentError = ref<string | null>(null)
 
 // Для редактирования комментария
-const editingCommentId = ref<number | null>(null);
-const editingCommentText = ref('');
-const editCommentError = ref<string | null>(null);
+const editingCommentId = ref<number | null>(null)
+const editingCommentText = ref('')
+const editCommentError = ref<string | null>(null)
 
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
-const route = useRoute();
-const router = useRouter();
-const authStore = useAuthStore(); // Используем хранилище
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
+const route = useRoute()
+const router = useRouter()
+const authStore = useAuthStore() // Используем хранилище
 
 const tabs = [
   { name: 'description', label: 'Описание' },
   { name: 'map', label: 'Карта' },
   { name: 'comments', label: 'Комментарии' },
-];
+]
+
+const canEditCurrentAd = computed(() => {
+  if (!ad.value || !authStore.isAuthenticated || !authStore.user) return false;
+  if (authStore.user.is_staff) return true;
+  if (authStore.user.role_permissions?.can_manage_any_advertisement) return true;
+  return authStore.user.id === ad.value.user.id && authStore.user.role_permissions?.can_edit_own_advertisement;
+});
+
 
 const fetchAdDetail = async (adId: string | number) => {
   // ... (код без изменений) ...
-  loading.value = true;
-  error.value = null;
-  ad.value = null;
+  loading.value = true
+  error.value = null
+  ad.value = null
   try {
-    const response = await axios.get<AdvertisementDetail>(`${API_BASE_URL}/advertisements/${adId}/`);
-    ad.value = response.data;
+    const response = await axios.get<AdvertisementDetail>(`${API_BASE_URL}/advertisements/${adId}/`)
+    ad.value = response.data
   } catch (err) {
-    console.error(`Ошибка загрузки объявления ${adId}:`, err);
-    error.value = axios.isAxiosError(err) ? (err.response?.status === 404 ? "Объявление не найдено." : `Ошибка: ${err.message}`) : "Неизвестная ошибка";
+    console.error(`Ошибка загрузки объявления ${adId}:`, err)
+    error.value = axios.isAxiosError(err)
+      ? err.response?.status === 404
+        ? 'Объявление не найдено.'
+        : `Ошибка: ${err.message}`
+      : 'Неизвестная ошибка'
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 const submitComment = async () => {
-  if (!newCommentMessage.value.trim() || !ad.value || !authStore.isAuthenticated) return;
-  commentSubmitting.value = true;
-  commentError.value = null;
+  if (!newCommentMessage.value.trim() || !ad.value || !authStore.isAuthenticated) return
+  commentSubmitting.value = true
+  commentError.value = null
   try {
     const response = await axios.post<AdResponse>(
       `${API_BASE_URL}/advertisements/${ad.value.id}/responses/`,
-      { message: newCommentMessage.value }
+      { message: newCommentMessage.value },
       // Axios должен быть настроен для отправки токена (см. auth.ts и main.ts)
-    );
-    ad.value.responses.unshift(response.data); // Добавляем новый коммент в начало
-    newCommentMessage.value = '';
+    )
+    ad.value.responses.unshift(response.data) // Добавляем новый коммент в начало
+    newCommentMessage.value = ''
   } catch (err) {
-    console.error("Ошибка отправки комментария:", err);
-    commentError.value = axios.isAxiosError(err) ? `Ошибка: ${err.response?.data?.detail || err.message}` : "Не удалось отправить комментарий.";
+    console.error('Ошибка отправки комментария:', err)
+    commentError.value = axios.isAxiosError(err)
+      ? `Ошибка: ${err.response?.data?.detail || err.message}`
+      : 'Не удалось отправить комментарий.'
   } finally {
-    commentSubmitting.value = false;
+    commentSubmitting.value = false
   }
-};
+}
 
 const startEditComment = (comment: AdResponse) => {
-  editingCommentId.value = comment.id;
-  editingCommentText.value = comment.message;
-  editCommentError.value = null;
-};
+  editingCommentId.value = comment.id
+  editingCommentText.value = comment.message
+  editCommentError.value = null
+}
 
 const cancelEditComment = () => {
-  editingCommentId.value = null;
-  editingCommentText.value = '';
-  editCommentError.value = null;
-};
+  editingCommentId.value = null
+  editingCommentText.value = ''
+  editCommentError.value = null
+}
 
 const saveEditedComment = async (commentId: number) => {
-  if (!editingCommentText.value.trim() || !ad.value) return;
-  commentSubmitting.value = true; // Используем тот же флаг для блокировки кнопки
-  editCommentError.value = null;
+  if (!editingCommentText.value.trim() || !ad.value) return
+  commentSubmitting.value = true // Используем тот же флаг для блокировки кнопки
+  editCommentError.value = null
   try {
     const response = await axios.patch<AdResponse>( // Используем PATCH для частичного обновления
       `${API_BASE_URL}/advertisements/${ad.value.id}/responses/${commentId}/`,
-      { message: editingCommentText.value }
-    );
+      { message: editingCommentText.value },
+    )
     // Обновляем комментарий в списке
-    const index = ad.value.responses.findIndex(r => r.id === commentId);
+    const index = ad.value.responses.findIndex((r) => r.id === commentId)
     if (index !== -1) {
-      ad.value.responses[index] = response.data;
+      ad.value.responses[index] = response.data
     }
-    cancelEditComment(); // Сбрасываем состояние редактирования
+    cancelEditComment() // Сбрасываем состояние редактирования
   } catch (err) {
-    console.error("Ошибка сохранения комментария:", err);
-    editCommentError.value = axios.isAxiosError(err) ? `Ошибка: ${err.response?.data?.detail || err.message}` : "Не удалось сохранить изменения.";
+    console.error('Ошибка сохранения комментария:', err)
+    editCommentError.value = axios.isAxiosError(err)
+      ? `Ошибка: ${err.response?.data?.detail || err.message}`
+      : 'Не удалось сохранить изменения.'
   } finally {
-    commentSubmitting.value = false;
+    commentSubmitting.value = false
   }
-};
+}
 
 const deleteComment = async (commentId: number) => {
-  if (!ad.value) return;
+  if (!ad.value) return
   // Можно добавить подтверждение удаления
-  if (!confirm("Вы уверены, что хотите удалить этот комментарий?")) return;
+  if (!confirm('Вы уверены, что хотите удалить этот комментарий?')) return
 
   // commentSubmitting.value = true; // Можно использовать отдельный флаг, если нужно
   try {
-    await axios.delete(`${API_BASE_URL}/advertisements/${ad.value.id}/responses/${commentId}/`);
+    await axios.delete(`${API_BASE_URL}/advertisements/${ad.value.id}/responses/${commentId}/`)
     // Удаляем комментарий из списка
-    ad.value.responses = ad.value.responses.filter(r => r.id !== commentId);
+    ad.value.responses = ad.value.responses.filter((r) => r.id !== commentId)
   } catch (err) {
-    console.error("Ошибка удаления комментария:", err);
+    console.error('Ошибка удаления комментария:', err)
     // Можно показать сообщение об ошибке пользователю
-    alert(axios.isAxiosError(err) ? `Ошибка: ${err.response?.data?.detail || err.message}` : "Не удалось удалить комментарий.");
+    alert(
+      axios.isAxiosError(err)
+        ? `Ошибка: ${err.response?.data?.detail || err.message}`
+        : 'Не удалось удалить комментарий.',
+    )
   } finally {
     // commentSubmitting.value = false;
   }
-};
-
+}
 
 onMounted(() => {
-  fetchAdDetail(props.id);
-});
+  fetchAdDetail(props.id)
+})
 
-watch(() => props.id, (newId) => {
-  if (newId) {
-    fetchAdDetail(newId);
-    activeTab.value = 'description';
-    cancelEditComment(); // Сбрасываем редактирование при смене объявления
-  }
-});
+watch(
+  () => props.id,
+  (newId) => {
+    if (newId) {
+      fetchAdDetail(newId)
+      activeTab.value = 'description'
+      cancelEditComment() // Сбрасываем редактирование при смене объявления
+    }
+  },
+)
 </script>
 
 <style scoped>

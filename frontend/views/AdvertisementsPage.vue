@@ -27,6 +27,15 @@
 
 
     <div class="container mx-auto px-4 py-6 md:py-8">
+      <div class="mb-6 text-right" v-if="authStore.isAuthenticated && (authStore.user?.is_staff || authStore.user?.role_permissions?.can_create_advertisement)">
+              <router-link 
+                :to="{ name: 'AdvertisementCreate' }" 
+                class="inline-flex items-center bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md shadow-sm transition-colors"
+              >
+                <font-awesome-icon :icon="['fas', 'plus-circle']" class="mr-2"/>
+                Создать объявление
+              </router-link>
+            </div>
       <div class="flex flex-col md:flex-row gap-6 md:gap-8">
         <!-- Левая колонка: Фильтры для десктопа -->
         <div class="hidden md:block md:w-1/4 lg:w-1/5">
@@ -37,6 +46,7 @@
             @reset-filters="handleResetFilters"
           />
         </div>
+        
 
         <!-- Правая колонка: Объявления и управление -->
         <div class="w-full md:w-3/4 lg:w-4/5">
@@ -68,6 +78,7 @@
                     </button>
                 </div>
             </div>
+            
 
 
           <!-- Сетка объявлений -->
@@ -137,6 +148,7 @@ import AdCard from '../components/AdCard.vue';
 import FilterSidebar from '../components/FilterSidebar.vue';
 import MobileFilterModal from '../components/MobileFilterModal.vue';
 import { formatTimeAgo } from '../utils/time';
+import { useAuthStore } from '../stores/auth';
 import type { Advertisement, PaginatedAdvertisementsResponse, FilterOptions, SelectedFilters } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
@@ -148,6 +160,7 @@ const totalAdsCount = ref(0);
 const totalPages = ref(1);
 const currentPage = ref(1); // Будет установлено из URL
 const itemsPerPage = 12;
+const authStore = useAuthStore();
 
 const filterOptions = ref<FilterOptions>({
   regions: [], species: [], ad_statuses: [], colors: [], genders: [], age_categories: [],
@@ -307,7 +320,7 @@ watch(
       const filterKey = key as keyof SelectedFilters;
       const queryValue = newQuery[filterKey] as string | undefined;
       if (queryValue !== undefined && queryValue !== null && queryValue !== '') {
-        if (filterKey === 'age_category') {
+        if (filterKey === 'age_category' || filterKey === 'gender') {
           newFiltersStateFromQuery[filterKey] = queryValue;
         } else {
           const numValue = parseInt(queryValue, 10);

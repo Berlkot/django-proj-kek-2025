@@ -24,9 +24,9 @@ export interface AnimalColor {
   name: string;
 }
 
-export interface AnimalGender {
-  id: number;
-  name: string;
+export interface GenderOption {
+    value: string; 
+    label: string;
 }
 
 export interface AgeCategory {
@@ -39,7 +39,7 @@ export interface FilterOptions {
   species: Species[];
   ad_statuses: AdStatus[];
   colors: AnimalColor[];
-  genders: AnimalGender[];
+  genders: GenderOption[]; // <--- ИЗМЕНЕНО
   age_categories: AgeCategory[];
 }
 
@@ -86,7 +86,7 @@ export interface SelectedFilters {
   ad_status: number | null; // Тип объявления
   species: number | null; // Вид животного
   color: number | null;
-  gender: number | null;
+  gender: string | null;
   // Добавьте другие по мере необходимости
 }
 export interface AdAuthor { // Используем для автора объявления и автора отклика
@@ -137,6 +137,22 @@ export interface AdvertisementDetail {
   location: string; // Имя региона пользователя автора или "Не указано"
 }
 
+export interface RolePermissions {
+  can_create_article?: boolean;
+  can_edit_own_article?: boolean;
+  can_edit_any_article?: boolean;
+  can_delete_own_article?: boolean;
+  can_delete_any_article?: boolean;
+  can_edit_own_comment?: boolean;
+  can_delete_own_comment?: boolean;
+  can_delete_any_comment?: boolean;
+  can_create_advertisement?: boolean;
+  can_manage_own_advertisement?: boolean;
+  can_manage_any_advertisement?: boolean;
+  can_delete_own_advertisement?: boolean;
+  can_delete_any_advertisement?: boolean;
+}
+
 export interface User {
   id: number;
   email: string;
@@ -149,6 +165,7 @@ export interface User {
   region?: string | null;
   phone_number?: string | null;
   is_staff?: boolean;
+  role_permissions?: RolePermissions | null;
 }
 
 export interface ArticleFormData {
@@ -164,4 +181,27 @@ export interface ArticleCategory { // Если еще не определен
   id: number;
   name: string;
   slug: string;
+}
+
+
+export interface AnimalFormData { // Для формы животного внутри объявления
+  name: string | null;
+  birth_date: string | null; // YYYY-MM-DD
+  species: number | null; // ID
+  breed: number | null; // ID
+  color: number | null; // ID
+  gender: string | null; // ID
+}
+
+export interface AdvertisementFormData {
+  id?: number;
+  title: string;
+  description: string;
+  status: number | null; // ID AdStatus
+  latitude: number | null;
+  longitude: number | null;
+  animal_data: AnimalFormData;
+  // Для управления фото
+  photos_upload?: File[]; // Новые файлы для загрузки
+  existing_photo_ids?: number[]; // ID существующих фото, которые нужно оставить/удалить (если используется такой механизм)
 }

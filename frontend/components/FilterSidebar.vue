@@ -90,8 +90,8 @@
           class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 text-sm"
         >
           <option value="null_option">Любой пол</option>
-          <option v-for="gender in options.genders" :key="gender.id" :value="gender.id">
-            {{ gender.name }}
+          <option v-for="gender in options.genders" :key="gender.value" :value="gender.value">
+            {{ gender.label }}
           </option>
         </select>
       </div>
@@ -134,6 +134,7 @@ const internalFilters = ref<SelectedFilters>({ ...toRaw(props.modelValue) });
 // Следим за props.modelValue, чтобы обновлять internalFilters, если фильтры меняются извне (например, из URL)
 watch(() => props.modelValue, (newValue) => {
   // Сравниваем, чтобы избежать лишних обновлений, если объект тот же
+  console.log(newValue);
   if (JSON.stringify(toRaw(newValue)) !== JSON.stringify(toRaw(internalFilters.value))) {
     internalFilters.value = { ...toRaw(newValue) };
   }
@@ -144,7 +145,7 @@ const updateFilter = (key: keyof SelectedFilters, eventTargetValue: string) => {
 
   if (eventTargetValue === 'null_option') { // Проверяем специальное значение
     processedValue = null;
-  } else if (key !== 'age_category') {
+  } else if (key !== 'age_category' && key !== 'gender') {
     const numValue = parseInt(eventTargetValue, 10);
     processedValue = isNaN(numValue) ? null : numValue;
   } else {

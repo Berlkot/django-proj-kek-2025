@@ -1,9 +1,14 @@
+#siteapp/models.py
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
 from django.utils.html import format_html # For admin display methods
+from django.utils import timezone
+from django.conf import settings
+from django.template.defaultfilters import slugify
 
 # --- Core Entities ---
+FRONTEND_BASE_URL = getattr(settings, 'FRONTEND_BASE_URL', 'http://localhost:5173')
 
 class Region(models.Model):
     name = models.CharField(_("название региона"), max_length=100, unique=True)
@@ -23,6 +28,13 @@ class Role(models.Model):
     can_edit_any_article = models.BooleanField(_("может редактировать любые статьи"), default=False)
     can_delete_own_article = models.BooleanField(_("может удалять свои статьи"), default=False) # Аналогично
     can_delete_any_article = models.BooleanField(_("может удалять любые статьи"), default=False)
+    can_edit_own_comment = models.BooleanField(_("может редактировать свои комментарии"), default=True) # Обычно пользователи могут редактировать свои комменты
+    can_delete_own_comment = models.BooleanField(_("может удалять свои комментарии"), default=True)   # И удалять
+    can_delete_any_comment = models.BooleanField(_("может удалять любые комментарии (модерация)"), default=False) # Для модераторов/админов
+    can_create_advertisement = models.BooleanField(_("может создавать объявления"), default=True) # По умолчанию пользователи могут создавать
+    can_edit_own_advertisement = models.BooleanField(_("может редактировать свои объявления"), default=True)
+    can_delete_own_advertisement = models.BooleanField(_("может удалять свои объявления"), default=True)
+    can_manage_any_advertisement = models.BooleanField(_("может управлять любыми объявлениями (модерация)"), default=False) # Для 
 
     class Meta:
         verbose_name = _("роль")
@@ -124,18 +136,18 @@ class AnimalColor(models.Model):
     def __str__(self):
         return self.name
 
-class AnimalGender(models.Model):
-    name = models.CharField(_("пол"), max_length=30, unique=True) # e.g., "Мальчик", "Девочка", "Не указан"
-
-    class Meta:
-        verbose_name = _("пол животного")
-        verbose_name_plural = _("пол животных")
-        ordering = ['name']
-
-    def __str__(self):
-        return self.name
-
 class Animal(models.Model):
+    # --- ВАРИАНТЫ ПОЛА ЧЕРЕЗ CHOICES ---
+    GENDER_MALE = 'M'
+    GENDER_FEMALE = 'F'
+    GENDER_UNKNOWN = 'U'
+    GENDER_CHOICES = [
+        (GENDER_MALE, _('Мальчик')),
+        (GENDER_FEMALE, _('Девочка')),
+        (GENDER_UNKNOWN, _('Не указан')),
+    ]
+    # --- КОНЕЦ CHOICES ---
+
     name = models.CharField(_("имя/кличка"), max_length=100, blank=True, null=True, help_text=_("Может быть пустым, если неизвестно"))
     birth_date = models.DateField(_("дата рождения"), blank=True, null=True, help_text=_("Примерная, если точная неизвестна"))
     species = models.ForeignKey(Species, on_delete=models.PROTECT, verbose_name=_("вид"))
@@ -147,21 +159,20 @@ class Animal(models.Model):
         verbose_name=_("порода"),
         help_text=_("Может быть пустым для беспородных или если порода неизвестна")
     )
-    color = models.ForeignKey(
+    color = models.ForeignKey( # Оставляем ForeignKey для цвета, т.к. вариантов может быть много
         AnimalColor,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         verbose_name=_("окрас")
     )
-    gender = models.ForeignKey(
-        AnimalGender,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        verbose_name=_("пол")
+    gender = models.CharField( # <--- ИЗМЕНЕНО: было ForeignKey
+        _("пол"),
+        max_length=1,
+        choices=GENDER_CHOICES,
+        null=False,
+        default=GENDER_UNKNOWN
     )
-    # Consider adding 'description', 'photo' fields here too (если они специфичны для животного, а не объявления)
 
     class Meta:
         verbose_name = _("животное")
@@ -171,13 +182,16 @@ class Animal(models.Model):
     def __str__(self):
         return f"{self.name or _('Неизвестное животное')} ({self.species.name})"
 
+    # Метод для получения отображаемого значения пола (полезно для шаблонов/API)
+    def get_gender_display_for_api(self): # get_gender_display уже есть в Django
+        return self.get_gender_display() if self.gender else None
+
 class Shelter(models.Model): # Приют
     name = models.CharField(_("название приюта"), max_length=200)
     address = models.CharField(_("адрес"), max_length=255)
     contacts = models.TextField(_("контакты"), blank=True)
     region = models.ForeignKey(Region, on_delete=models.PROTECT, verbose_name=_("регион"))
-    # animals = models.ManyToManyField(Animal, through='AnimalInShelter', blank=True, verbose_name=_("животные в приюте"))
-
+    website = models.URLField(_("веб-сайт приюта"), max_length=300, blank=True, null=True)
 
     class Meta:
         verbose_name = _("приют")
@@ -201,6 +215,44 @@ class AnimalInShelter(models.Model):
     def __str__(self):
         return f"{self.animal} в {self.shelter}"
 
+class ActiveAdvertisementManager(models.Manager):
+    def get_queryset(self):
+        # Переопределяем базовый queryset, чтобы он всегда возвращал QuerySet
+        # (хотя super().get_queryset() уже это делает)
+        return super().get_queryset()
+
+    def active(self):
+        """
+        Возвращает только объявления со статусом "Активно".
+        """
+        try:
+            # Имя статуса, который считаем активным
+            active_status_name = "Активно" 
+            # Мы не можем использовать AdStatus.objects.get здесь напрямую, 
+            # так как это вызовет рекурсивный импорт, если AdStatus определен ниже Advertisement.
+            # Поэтому лучше либо передавать имя статуса, либо использовать строковый путь к модели
+            # для ForeignKey в AdStatus, либо убедиться, что AdStatus определен ДО этого менеджера.
+            # Поскольку AdStatus у вас определен до Advertisement, можно попробовать так:
+            # active_status_obj = AdStatus.objects.get(name=active_status_name)
+            # return self.get_queryset().filter(status=active_status_obj)
+            #
+            # Более безопасный способ, если AdStatus может быть еще не загружен полностью при инициализации менеджера,
+            # это фильтровать по имени связанного поля:
+            return self.get_queryset().filter(status__name=active_status_name)
+        except AdStatus.DoesNotExist: # Это исключение не будет поймано, если фильтруем по status__name
+            print(f"WARNING: Status '{active_status_name}' not found, ActiveAdvertisementManager.active() will return empty queryset if status__name is used directly.")
+            return self.get_queryset().none() # Возвращаем пустой queryset, если статус не найден
+        except Exception as e: # Общий обработчик на случай других проблем
+            print(f"Error in ActiveAdvertisementManager.active(): {e}")
+            return self.get_queryset().none()
+
+    def recently_published(self, days=7):
+        """
+        Возвращает активные объявления, опубликованные за последние N дней.
+        """
+        return self.active().filter(publication_date__gte=timezone.now() - timezone.timedelta(days=days))
+
+
 
 class Advertisement(models.Model): # Объявление
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name=_("пользователь"))
@@ -211,7 +263,9 @@ class Advertisement(models.Model): # Объявление
     publication_date = models.DateTimeField(_("дата размещения"), auto_now_add=True)
     latitude = models.FloatField(_("широта"), blank=True, null=True)
     longitude = models.FloatField(_("долгота"), blank=True, null=True)
-    # is_active = models.BooleanField(_("активно"), default=True) # Consider this for soft deletes/archiving
+    
+    objects = models.Manager() 
+    active_ads = ActiveAdvertisementManager()
 
     class Meta:
         verbose_name = _("объявление")
@@ -220,6 +274,18 @@ class Advertisement(models.Model): # Объявление
 
     def __str__(self):
         return f"{self.title} ({self.animal.name or _('животное')}, {_('статус')}: {self.status.name})"
+        
+    def get_absolute_url(self):
+        """
+        Возвращает URL для просмотра этого объявления на фронтенде.
+        """
+        # Предполагаем, что Vue Router настроен на /advertisement/:id
+        return f"{FRONTEND_BASE_URL}advertisement/{self.pk}"
+        # Альтернативно, если бы вы хотели ссылку на API эндпоинт (менее полезно для "View on site"):
+        # try:
+        #     return reverse('siteapp_api:advertisement-detail', kwargs={'pk': self.pk}) # Используем имя из router basename + -detail
+        # except NoReverseMatch:
+        #     return "#error-no-reverse-match"
 
 class AdPhoto(models.Model): # Объявление_Фото
     advertisement = models.ForeignKey(Advertisement, related_name='photos', on_delete=models.CASCADE, verbose_name=_("объявление"))
@@ -326,6 +392,18 @@ class Article(models.Model):
         if self.content:
             return (self.content[:150] + '...') if len(self.content) > 150 else self.content
         return ""
+    
+    def get_absolute_url(self):
+        """
+        Возвращает URL для просмотра этой статьи на фронтенде.
+        """
+        # Предполагаем, что Vue Router настроен на /article/:id
+        return f"{FRONTEND_BASE_URL}article/{self.pk}"
+        # Альтернативно, для API эндпоинта:
+        # try:
+        #     return reverse('siteapp_api:article-retrieve-update-destroy', kwargs={'id': self.pk})
+        # except NoReverseMatch:
+        #     return "#error-no-reverse-match-article"
 
 class Comment(models.Model):
     article = models.ForeignKey(Article, related_name='comments', on_delete=models.CASCADE, verbose_name=_("статья"))

@@ -131,8 +131,10 @@
                       @change="updateFilter('gender', ($event.target as HTMLSelectElement).value)"
                       class="w-full p-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 text-sm bg-white"
                   >
-                      <option value="null_option">Любой пол</option>
-                      <option v-for="gender in options.genders" :key="gender.id" :value="gender.id">{{ gender.name }}</option>
+                    <option value="null_option">Любой пол</option>
+                    <option v-for="gender in options.genders" :key="gender.value" :value="gender.value">
+                      {{ gender.label }}
+                    </option>
                   </select>
                   <div v-else class="w-full p-2.5 border border-gray-300 rounded-md bg-gray-100 text-gray-500 text-sm">
                       Загрузка пола...
@@ -186,7 +188,7 @@ watch(() => props.modelValue, (newValue) => {
 
 const updateFilter = (key: keyof SelectedFilters, eventTargetValue: string) => {
   let processedValue: string | number | null = null;
-  if (eventTargetValue === 'null_option') {
+  if (eventTargetValue === 'null_option' && key !== 'gender') {
     processedValue = null;
   } else if (key !== 'age_category') {
     const numValue = parseInt(eventTargetValue, 10);

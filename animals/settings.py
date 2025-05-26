@@ -32,21 +32,23 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'rest_framework',
-    'django_filters',
-    "django_vite",
-    'rest_framework_simplejwt',
-    'djoser',
-    "corsheaders",
-    "django.contrib.admin",
+    "django.contrib.admin", 
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "siteapp",
-]
 
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'django_filters',
+    "corsheaders",
+    "django_vite",
+
+    'siteapp.apps.SiteappConfig', 
+    
+    'djoser', # Djoser
+]
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
@@ -165,6 +167,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",
 ]
 
+FRONTEND_BASE_URL = os.getenv('FRONTEND_BASE_URL', 'http://localhost:5173' + STATIC_URL)
 
 from datetime import timedelta
 
