@@ -2,7 +2,7 @@
 import django_filters
 from django.utils import timezone
 from dateutil.relativedelta import relativedelta
-from .models import Advertisement, Animal, Region, AdStatus, AnimalGender, Species, AnimalColor
+from .models import Advertisement, Animal, Region, AdStatus, Species, AnimalColor
 from django.db.models import Q
 
 # Возрастные категории для фильтра
@@ -34,9 +34,9 @@ class AdvertisementFilter(django_filters.FilterSet):
         queryset=Species.objects.all(),
         label='Вид животного'
     )
-    gender = django_filters.ModelChoiceFilter(
+    gender = django_filters.ChoiceFilter( 
         field_name='animal__gender',
-        queryset=AnimalGender.objects.all(),
+        choices=Animal.GENDER_CHOICES, # Используем choices из модели Animal
         label='Пол'
     )
     color = django_filters.ModelChoiceFilter(

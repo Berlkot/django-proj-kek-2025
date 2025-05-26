@@ -10,6 +10,7 @@ urlpatterns = [
     path('api/', include('siteapp.urls')),
     path('auth/', include('djoser.urls')), # Djoser URLS (регистрация, логин, ...)
     path('auth/', include('djoser.urls.jwt')), # Djoser JWT URLS (создание/обновление токенов)
+    path('testing/', include('siteapp.non_api_urls')),
 
     re_path(r'^((?!media).)*$', TemplateView.as_view(template_name='index.html'), name='app'),
 ]

@@ -59,7 +59,10 @@
             </transition>
           </Menu>
         </template>
-        <button @click="navigateTo({ name: 'PostAd' })" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">
+        <button 
+          @click="handlePostAdClick" 
+          class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
+        >
           Разместить
         </button>
       </div>
@@ -140,6 +143,19 @@ const handleLogout = () => {
 const handleMobileLogout = () => {
   closeMobileMenu();
   handleLogout();
+};
+
+
+const handlePostAdClick = () => {
+  if (authStore.isAuthenticated && (authStore.user?.is_staff || authStore.user?.role_permissions?.can_create_advertisement)) {
+    router.push({ name: 'AdvertisementCreate' });
+  } else if (authStore.isAuthenticated && !(authStore.user?.is_staff || authStore.user?.role_permissions?.can_create_advertisement)) {
+    alert("У вас недостаточно прав для создания объявления."); // Или более красивое уведомление
+  }
+  else {
+    const createAdRoute = router.resolve({ name: 'AdvertisementCreate' });
+    router.push({ name: 'Login', query: { next: createAdRoute.fullPath } });
+  }
 };
 
 </script>

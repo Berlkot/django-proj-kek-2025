@@ -1,13 +1,26 @@
 # siteapp/admin.py
 from django.contrib import admin
 from django.utils.html import format_html
+from django.http import HttpResponse
+import io, os
 from django.utils.translation import gettext_lazy as _
+from django.conf import settings
 from .models import (
     Region, Role, User, AdStatus, Species, Breed, Animal, Shelter,
     AnimalInShelter, Advertisement, AdPhoto, AdResponse, Article, Comment, Volunteering,
-    ArticleCategory, AnimalColor, AnimalGender
+    ArticleCategory, AnimalColor
 )
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.lib.units import inch, cm
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_JUSTIFY, TA_LEFT, TA_CENTER, TA_RIGHT
+from reportlab.lib import colors
+from reportlab.pdfbase import pdfmetrics # Для шрифтов
+from reportlab.pdfbase.ttfonts import TTFont # Для шрифтов
 
 
 @admin.register(Region)
@@ -15,10 +28,104 @@ class RegionAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')
     search_fields = ('name',)
 
+
 @admin.register(Role)
 class RoleAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name')
+    list_display = (
+        'name', 
+        'display_article_permissions', # Кастомный метод для прав на статьи
+        'display_comment_permissions', # Кастомный метод для прав на комменты
+        'display_comment_permissions',
+        # Можно добавить отдельные столбцы для каждого права, если их не слишком много
+        # 'can_create_article', 
+        # 'can_edit_any_article',
+        # 'can_delete_any_comment',
+    )
     search_fields = ('name',)
+    # Если полей прав много, можно использовать fieldsets для группировки на странице редактирования роли
+    fieldsets = (
+        (None, {'fields': ('name',)}),
+        ('Права на статьи', {
+            'classes': ('collapse',), # Можно сделать сворачиваемым
+            'fields': (
+                'can_create_article', 'can_edit_own_article', 'can_edit_any_article',
+                'can_delete_own_article', 'can_delete_any_article',
+            )
+        }),
+        ('Права на комментарии', {
+            'classes': ('collapse',),
+            'fields': (
+                'can_edit_own_comment', 'can_delete_own_comment', 'can_delete_any_comment',
+            )
+        }),
+        ('Права на объявления', { 
+            'classes': ('collapse',),
+            'fields': (
+                'can_create_advertisement', 'can_edit_own_advertisement',
+                'can_delete_own_advertisement', 'can_manage_any_advertisement',
+            )
+        }),
+        # ... другие группы прав ...
+    )
+
+    @admin.display(description="Права на статьи", boolean=False) # boolean=False, так как возвращаем HTML
+    def display_article_permissions(self, obj):
+        perms = []
+        if obj.can_create_article: perms.append("Создание")
+        if obj.can_edit_own_article: perms.append("Ред. свои")
+        if obj.can_edit_any_article: perms.append("Ред. все")
+        if obj.can_delete_own_article: perms.append("Удал. свои")
+        if obj.can_delete_any_article: perms.append("Удал. все")
+        return ", ".join(perms) if perms else "Нет прав"
+
+    @admin.display(description="Права на объявления") # <-- НОВЫЙ МЕТОД
+    def display_advertisement_permissions(self, obj):
+        perms = []
+        if obj.can_create_advertisement: perms.append("Создание")
+        if obj.can_edit_own_advertisement: perms.append("Ред. свои")
+        if obj.can_delete_own_advertisement: perms.append("Удал. свои")
+        if obj.can_manage_any_advertisement: perms.append("Упр. всеми (модерация)")
+        return ", ".join(perms) if perms else "Нет спец. прав"
+
+    @admin.display(description="Права на комментарии", boolean=False)
+    def display_comment_permissions(self, obj):
+        perms = []
+        if obj.can_edit_own_comment: perms.append("Ред. свои")
+        if obj.can_delete_own_comment: perms.append("Удал. свои")
+        if obj.can_delete_any_comment: perms.append("Удал. все (модерация)")
+        return ", ".join(perms) if perms else "Нет прав"
+
+
+@admin.action(description='Проверить наличие активных объявлений у пользователей')
+def check_active_ads(modeladmin, request, queryset): # queryset здесь - это QuerySet из User
+    users_with_active_ads = 0
+    users_without_active_ads = 0
+    active_status = None
+    try:
+        active_status = AdStatus.objects.get(name="Активно")
+    except AdStatus.DoesNotExist:
+        modeladmin.message_user(request, "Статус 'Активно' не найден.", level='error')
+        return
+
+    for user in queryset:
+        # Используем exists() для проверки
+        if Advertisement.objects.filter(user=user, status=active_status).exists():
+            users_with_active_ads += 1
+        else:
+            users_without_active_ads += 1
+    
+    modeladmin.message_user(request, 
+        f"{users_with_active_ads} пользователей имеют активные объявления. "
+        f"{users_without_active_ads} пользователей не имеют активных объявлений."
+    )
+
+@admin.action(description='Деактивировать выбранных пользователей (кроме суперпользователей)')
+def deactivate_users(modeladmin, request, queryset):
+    # Исключаем суперпользователей из деактивации для безопасности
+    users_to_deactivate = queryset.exclude(is_superuser=True)
+    updated_count = users_to_deactivate.update(is_active=False)
+    modeladmin.message_user(request, f"{updated_count} пользователей были деактивированы.")
+
 
 # Custom User Admin
 class UserAdmin(BaseUserAdmin):
@@ -27,6 +134,7 @@ class UserAdmin(BaseUserAdmin):
     search_fields = ('email', 'username', 'display_name')
     ordering = ('email',)
     raw_id_fields = ('role', 'region') # If many roles/regions
+    actions = [check_active_ads, deactivate_users]
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         (_('Personal info'), {'fields': ('username', 'display_name', 'first_name', 'last_name', 'phone_number', 'avatar', 'avatar_preview_admin')}), # Added phone_number
@@ -83,17 +191,12 @@ class AnimalColorAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')
     search_fields = ('name',)
 
-@admin.register(AnimalGender)
-class AnimalGenderAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name')
-    search_fields = ('name',)
-
 @admin.register(Animal)
 class AnimalAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'species', 'breed', 'color', 'gender', 'birth_date') # Добавлены color, gender
-    list_filter = ('species', 'breed', 'color', 'gender') # Добавлены color, gender
-    search_fields = ('name', 'species__name', 'breed__name', 'color__name', 'gender__name')
-    raw_id_fields = ('species', 'breed', 'color', 'gender') # Добавлены color, gender
+    list_display = ('id', 'name', 'species', 'breed', 'color', 'get_gender_display', 'birth_date') # Используем get_gender_display
+    list_filter = ('species', 'breed', 'color', 'gender') # 'gender' теперь будет использовать choices
+    search_fields = ('name', 'species__name', 'breed__name', 'color__name', 'gender') # Поиск по gender будет по ключу (M, F, U)
+    raw_id_fields = ('species', 'breed', 'color') # 'gender' больше не ForeignKey
     inlines = [AnimalInShelterInline]
     date_hierarchy = 'birth_date'
 
@@ -116,16 +219,29 @@ class AnimalInShelterForShelterInline(admin.TabularInline):
 
 @admin.register(Shelter)
 class ShelterAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'region', 'address', 'active_animals_count')
+    list_display = ('id', 'name', 'region', 'address', 'website_link', 'active_animals_count') # Добавлено website_link
     list_filter = ('region',)
-    search_fields = ('name', 'address', 'region__name')
+    search_fields = ('name', 'address', 'region__name', 'website') # Добавлено website в поиск
     raw_id_fields = ('region',)
     inlines = [AnimalInShelterForShelterInline, VolunteeringForShelterInline]
+    
+    # Добавляем поля в fieldsets, если они используются для кастомизации формы редактирования
+    # Если fieldsets не определены, Django отобразит все поля автоматически.
+    # Если fieldsets определены, нужно явно добавить 'website'.
+    # Пример, если у вас уже были fieldsets:
+    # fieldsets = (
+    #     (None, {'fields': ('name', 'region', 'address', 'contacts', 'website')}), 
+    # )
+
+    @admin.display(description=_("Веб-сайт"))
+    def website_link(self, obj):
+        if obj.website:
+            return format_html('<a href="{0}" target="_blank">{0}</a>', obj.website)
+        return "–" # Или _("Нет")
 
     @admin.display(description=_("Кол-во животных"))
     def active_animals_count(self, obj):
-        # Example of a custom method in list_display
-        return obj.animalinshelter_set.count() # Counts related AnimalInShelter objects
+        return obj.animalinshelter_set.count()
 
 @admin.register(AnimalInShelter)
 class AnimalInShelterAdmin(admin.ModelAdmin):
@@ -155,6 +271,112 @@ class AdResponseInline(admin.StackedInline): # Or TabularInline
     can_delete = False # Usually, responses shouldn't be deleted from ad page
     raw_id_fields = ('user',)
 
+
+# --- Регистрация шрифта для кириллицы (пример) ---
+# Убедитесь, что файл шрифта DejaVuSans.ttf (или другой кириллический) доступен
+# Например, поместите его в папку static вашего приложения или в общую папку проекта
+# и укажите правильный путь.
+try:
+    # Предполагаем, что шрифт лежит в корне проекта или в папке, известной Django
+    # font_path = os.path.join(settings.BASE_DIR, 'path_to_your_fonts', 'DejaVuSans.ttf')
+    # Для простоты примера, если вы положите его рядом с manage.py:
+    font_path_dejavu = 'DejaVuSans.ttf' # Положите шрифт в корень проекта или укажите полный путь
+    pdfmetrics.registerFont(TTFont('DejaVuSans', font_path_dejavu))
+    FONT_FAMILY_RU = 'DejaVuSans'
+except:
+    print("WARNING: DejaVuSans.ttf not found. Cyrillic in PDF might not work correctly.")
+    FONT_FAMILY_RU = 'Helvetica' 
+
+
+def export_advertisements_to_pdf(modeladmin, request, queryset):
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="advertisements_report.pdf"'
+    buffer = io.BytesIO()
+
+    # Используем FONT_FAMILY_RU, который был определен выше
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=18)
+    
+    styles = getSampleStyleSheet()
+    
+    # Создаем новые стили с нашим шрифтом, если он успешно зарегистрирован
+    # Если нет, то Paragraph будет использовать стандартный шрифт стиля (обычно Helvetica)
+    normal_style = ParagraphStyle(name='Normal_RU', parent=styles['Normal'])
+    h1_style = ParagraphStyle(name='h1_RU', parent=styles['h1'], alignment=TA_CENTER)
+    h3_style = ParagraphStyle(name='h3_RU', parent=styles['h3'])
+    justify_style = ParagraphStyle(name='Justify_RU', parent=styles['Normal'], alignment=TA_JUSTIFY)
+    center_style = ParagraphStyle(name='Center_RU', parent=styles['Normal'], alignment=TA_CENTER)
+
+    normal_style.fontName = FONT_FAMILY_RU
+    h1_style.fontName = FONT_FAMILY_RU
+    h3_style.fontName = FONT_FAMILY_RU
+    justify_style.fontName = FONT_FAMILY_RU
+    center_style.fontName = FONT_FAMILY_RU
+    
+    story = []
+    story.append(Paragraph("Отчет по объявлениям", h1_style))
+    story.append(Spacer(1, 0.5 * inch))
+
+    for ad in queryset:
+        story.append(Paragraph(f"<b><u>Объявление ID: {ad.id} - {ad.title}</u></b>", h3_style))
+        story.append(Spacer(1, 0.1 * inch))
+
+        ad_data_text = [
+            f"<b>Пользователь:</b> {ad.user.display_name or ad.user.username} ({ad.user.email})",
+            f"<b>Статус:</b> {ad.status.name}",
+            f"<b>Дата публикации:</b> {ad.publication_date.strftime('%d.%m.%Y %H:%M')}",
+            f"<b>Животное:</b> {ad.animal.name or 'Без имени'} ({ad.animal.species.name})",
+        ]
+        if ad.animal.breed:
+            ad_data_text.append(f"<b>Порода:</b> {ad.animal.breed.name}")
+        
+        for line in ad_data_text:
+            story.append(Paragraph(line, normal_style))
+
+        story.append(Paragraph("<b>Описание:</b>", normal_style))
+        story.append(Paragraph(ad.description[:800] + ('...' if len(ad.description) > 800 else ''), justify_style))
+        
+        story.append(Spacer(1, 0.3 * inch))
+        story.append(Paragraph("____________________________________", center_style))
+        story.append(Spacer(1, 0.3 * inch))
+
+    doc.build(story)
+    pdf = buffer.getvalue()
+    buffer.close()
+    response.write(pdf)
+    return response
+
+export_advertisements_to_pdf.short_description = "Экспортировать выбранные объявления в PDF"
+
+
+# --- Кастомное действие для изменения статуса ---
+@admin.action(description='Пометить выбранные как "Требует модерации"')
+def make_needs_moderation(modeladmin, request, queryset):
+    try:
+        needs_moderation_status = AdStatus.objects.get(name="Требует модерации") # Убедитесь, что такой статус есть
+        updated_count = queryset.update(status=needs_moderation_status)
+        modeladmin.message_user(request, f"{updated_count} объявлений были помечены как 'Требует модерации'.")
+    except AdStatus.DoesNotExist:
+        modeladmin.message_user(request, "Ошибка: Статус 'Требует модерации' не найден.", level='error')
+    except Exception as e:
+        modeladmin.message_user(request, f"Произошла ошибка: {e}", level='error')
+
+@admin.action(description='Удалить выбранные архивные объявления')
+def delete_archived_ads(modeladmin, request, queryset):
+    # Предположим, статус "В архиве" существует
+    archived_status_name = "В архиве" 
+    try:
+        archived_status = AdStatus.objects.get(name=archived_status_name)
+        # Фильтруем queryset еще раз, чтобы убедиться, что удаляем только архивные из выбранных
+        ads_to_delete = queryset.filter(status=archived_status)
+        deleted_count, _ = ads_to_delete.delete() # delete() возвращает кортеж (количество, {'app.Model': count})
+        modeladmin.message_user(request, f"{deleted_count} архивных объявлений были удалены.")
+    except AdStatus.DoesNotExist:
+        modeladmin.message_user(request, f"Статус '{archived_status_name}' не найден.", level='error')
+    except Exception as e:
+        modeladmin.message_user(request, f"Произошла ошибка при удалении: {e}", level='error')
+
+
+
 @admin.register(Advertisement)
 class AdvertisementAdmin(admin.ModelAdmin):
     list_display = ('id', 'title_with_animal', 'user_email', 'status', 'publication_date_formatted', 'region_of_ad')
@@ -164,6 +386,7 @@ class AdvertisementAdmin(admin.ModelAdmin):
     raw_id_fields = ('user', 'animal', 'status')
     date_hierarchy = 'publication_date'
     inlines = [AdPhotoInline, AdResponseInline]
+    actions = [export_advertisements_to_pdf, make_needs_moderation, delete_archived_ads]
     readonly_fields = ('publication_date',) # Set by auto_now_add
 
     @admin.display(description=_("Заголовок (Животное)"), ordering='title')

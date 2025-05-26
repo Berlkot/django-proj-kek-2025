@@ -5,6 +5,7 @@ import AdvertisementsPage from '../views/AdvertisementsPage.vue'
 import LoginPage from '../views/LoginPage.vue';
 import RegisterPage from '../views/RegisterPage.vue';
 import ArticleEditPage from '../views/ArticleEditPage.vue';
+import AdvertisementEditPage from '../views/AdvertisementEditPage.vue';
 import { useAuthStore } from '../stores/auth'; // Импортируем хранилище
 
 // Определяем тип для маршрутов для лучшей типизации
@@ -49,6 +50,19 @@ const routes = [
      name: 'AdvertisementDetail',
      component: () => import('../views/AdvertisementDetailPage.vue'), // Ленивая загрузка
      props: true
+   },
+   {
+     path: '/advertisements/edit/:id(\\d+)',
+     name: 'AdvertisementEdit',
+     component: AdvertisementEditPage,
+     props: true,
+     meta: { requiresAuth: true /* , requiresAdPermission: true */ } // Добавить проверку прав, если нужно
+   },
+   {
+     path: '/advertisements/create',
+     name: 'AdvertisementCreate',
+     component: AdvertisementEditPage,
+     meta: { requiresAuth: true /* , requiresAdPermission: true */ }
    },
   {
     path: '/rules',
