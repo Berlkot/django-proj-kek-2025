@@ -14,11 +14,11 @@
 <script setup lang="ts">
 import AppHeader from './components/AppHeader.vue';
 import AppFooter from './components/AppFooter.vue';
-// import { RouterView } from 'vue-router'; // Можно не импортировать, если используется глобально
+// import { RouterView } from 'vue-router';
 </script>
 
 <style>
-/* Глобальные стили или стили для App.vue */
+
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.2s ease;

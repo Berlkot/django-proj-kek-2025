@@ -1,6 +1,6 @@
 # siteapp/non_api_urls.py
 from django.urls import path
-from . import views # Импортируем из siteapp/views.py
+from . import views
 
 
 urlpatterns = [

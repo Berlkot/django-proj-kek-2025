@@ -11,39 +11,27 @@
         <div class="rounded-md shadow-sm -space-y-px">
           <div>
             <label for="email-address" class="sr-only">Email</label>
-            <input
-              id="email-address"
-              v-model="email"
-              name="email"
-              type="email"
-              autocomplete="email"
-              required
+            <input id="email-address" v-model="email" name="email" type="email" autocomplete="email" required
               class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
-              placeholder="Email"
-            >
+              placeholder="Email">
           </div>
           <div>
             <label for="password" class="sr-only">Пароль</label>
-            <input
-              id="password"
-              v-model="password"
-              name="password"
-              type="password"
-              autocomplete="current-password"
+            <input id="password" v-model="password" name="password" type="password" autocomplete="current-password"
               required
               class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
-              placeholder="Пароль"
-            >
+              placeholder="Пароль">
           </div>
         </div>
 
         <div v-if="authStore.error" class="bg-red-50 border-l-4 border-red-400 p-3">
-            <p class="text-sm text-red-700">{{ authStore.error }}</p>
+          <p class="text-sm text-red-700">{{ authStore.error }}</p>
         </div>
 
         <div class="flex items-center justify-between">
           <div class="flex items-center">
-            <input id="remember-me" name="remember-me" type="checkbox" class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded">
+            <input id="remember-me" name="remember-me" type="checkbox"
+              class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded">
             <label for="remember-me" class="ml-2 block text-sm text-gray-900">
               Запомнить меня
             </label>
@@ -56,13 +44,10 @@
         </div>
 
         <div>
-          <button
-            type="submit"
-            :disabled="authStore.loading"
-            class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-          >
+          <button type="submit" :disabled="authStore.loading"
+            class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50">
             <span v-if="authStore.loading" class="absolute left-0 inset-y-0 flex items-center pl-3">
-              <!-- Можно добавить спиннер -->
+
             </span>
             {{ authStore.loading ? 'Вход...' : 'Войти' }}
           </button>
@@ -92,8 +77,8 @@ const route = useRoute();
 const handleLogin = async () => {
   const success = await authStore.login({ email: email.value, password: password.value });
   if (success) {
-    // Перенаправление после успешного входа
-    // Если есть параметр 'next' в URL (например, пришли со страницы, требующей логина)
+
+
     const nextPath = route.query.next as string | undefined;
     router.push(nextPath || { name: 'Home' });
   }

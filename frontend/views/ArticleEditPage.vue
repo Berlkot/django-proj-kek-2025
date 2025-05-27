@@ -48,10 +48,10 @@
         <div v-if="imagePreviewUrl || formData.main_image_url" class="mt-3">
           <p class="text-xs text-gray-500 mb-1">Текущее/новое изображение:</p>
           <img :src="imagePreviewUrl || formData.main_image_url" alt="Превью изображения" class="max-h-48 rounded border">
-           <button 
-            v-if="formData.main_image_url || imagePreviewUrl" 
-            type="button" 
-            @click="removeImage" 
+           <button
+            v-if="formData.main_image_url || imagePreviewUrl"
+            type="button"
+            @click="removeImage"
             class="mt-2 text-xs text-red-600 hover:text-red-800"
           >
             Удалить изображение
@@ -59,7 +59,7 @@
         </div>
         <p v-if="formErrors.main_image" class="text-red-500 text-xs mt-1">{{ formErrors.main_image.join(', ') }}</p>
       </div>
-      
+
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Категории</label>
         <div v-if="loadingCategories" class="text-xs text-gray-500">Загрузка категорий...</div>
@@ -105,15 +105,15 @@
 import { ref, reactive, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import axios from 'axios';
-import type { ArticleFormData, ArticleCategory, ArticleDetail } from '../types'; // ArticleDetail для загрузки существующей
+import type { ArticleFormData, ArticleCategory, ArticleDetail } from '../types';
 import { useAuthStore } from '../stores/auth';
 
 const props = defineProps<{
-  id?: string; // ID для режима редактирования, приходит из router props
+  id?: string;
 }>();
 
 const router = useRouter();
-const route = useRoute(); // Не используется напрямую, но может быть полезен
+const route = useRoute();
 const authStore = useAuthStore();
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
@@ -134,7 +134,7 @@ const loadingInitialData = ref(false);
 const initialError = ref<string | null>(null);
 const submitting = ref(false);
 const submitError = ref<string | null>(null);
-const formErrors = ref<Record<string, string[]>>({}); // Для ошибок по полям
+const formErrors = ref<Record<string, string[]>>({});
 
 const articleId = computed(() => props.id ? parseInt(props.id, 10) : null);
 
@@ -164,7 +164,7 @@ const fetchCategories = async () => {
     categories.value = response.data;
   } catch (err) {
     console.error("Ошибка загрузки категорий:", err);
-    // Можно показать ошибку
+
   } finally {
     loadingCategories.value = false;
   }
@@ -176,15 +176,15 @@ const handleImageUpload = (event: Event) => {
     const file = target.files[0];
     formData.main_image = file;
     imagePreviewUrl.value = URL.createObjectURL(file);
-    formData.main_image_url = null; // Очищаем старый URL, если загружаем новый файл
+    formData.main_image_url = null;
   }
 };
 
 const removeImage = () => {
     formData.main_image = null;
     imagePreviewUrl.value = null;
-    formData.main_image_url = null; // Явно указываем, что изображение нужно удалить на бэкенде
-                                   // Бэкенд должен обработать main_image: null как удаление
+    formData.main_image_url = null;
+
 };
 
 
@@ -193,61 +193,61 @@ const handleSubmit = async () => {
   submitError.value = null;
   formErrors.value = {};
 
-  const data = new FormData(); // Используем FormData для отправки файла
+  const data = new FormData();
   data.append('title', formData.title);
   data.append('content', formData.content);
-  
-  // Добавляем категории как отдельные значения с одинаковым ключом 'categories'
+
+
   formData.categories.forEach(catId => data.append('categories', String(catId)));
 
   if (formData.main_image) {
     data.append('main_image', formData.main_image);
   } else if (formData.main_image === null && formData.main_image_url === null && articleId.value) {
-    // Если main_image и main_image_url оба null, и это редактирование,
-    // это означает, что пользователь удалил существующее изображение.
-    // Бэкенд должен это обработать, обычно передача `main_image: null` в PATCH/PUT
-    // должна очищать поле ImageField, если оно `null=True`.
-    // Если `main_image` не включать в FormData, то оно не изменится.
-    // Чтобы явно удалить, Djoser/DRF обычно ожидает `null` значение для поля файла.
-    // Для FormData это сложнее. Проще всего для DRF - это если поле файла НЕ передается, оно не меняется.
-    // Если передается пустая строка или null, это может вызвать ошибку или быть проигнорировано.
-    // Для явного удаления изображения через FormData можно отправить специальное значение,
-    // которое бэкенд обработает, или использовать PUT/PATCH с JSON, где main_image: null.
-    // Поскольку мы используем FormData из-за файла, явное удаление без загрузки нового файла может потребовать
-    // отдельного эндпоинта или специальной обработки на бэкенде.
-    // Пока что: если main_image не выбрано, старое изображение не меняется.
-    // Если main_image выбрано, оно заменяет старое.
-    // Если removeImage вызван, то formData.main_image_url = null, и main_image не будет отправлен.
-    // На бэкенде ArticleManageSerializer при обновлении, если main_image не пришло в validated_data,
-    // оно не будет тронуто. Если пришло null, то должно сброситься.
-    // Чтобы PATCH с FormData очистил ImageField, поле должно быть передано, но с "пустым" значением,
-    // что FormData не очень хорошо поддерживает для файлов.
-    // Возможно, потребуется отправлять JSON, если файл не меняется или удаляется.
-    // Но для простоты: если formData.main_image нет, то старое изображение остается.
-    // Если вызван removeImage, то formData.main_image_url обнулился, и main_image тоже.
-    // При сабмите, если main_image есть, отправляем. Если нет - не отправляем.
-    // Бэкенд при PATCH/PUT, если main_image нет в request.FILES, не будет его менять.
-    // Если мы хотим УДАЛИТЬ без замены, то при PATCH нужно передать `main_image: null`.
-    // С FormData это сделать сложно. Проще всего - если пользователь хочет удалить, он не загружает новое,
-    // а на бэке при редактировании, если поле main_image пришло как null (если это не FormData), то удалять.
-    // Текущая логика: если main_image выбрано, оно заменит старое. Если не выбрано, старое останется.
-    // Если removeImage нажат, main_image и main_image_url = null. При отправке FormData без main_image, бэк не изменит картинку.
-    // Для реализации удаления нужно либо PUT/PATCH с JSON и main_image: null, либо специальный флаг в FormData.
-    // Пока что удаление без замены новой картинкой не реализовано через эту форму.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   }
 
 
   try {
     let response;
     if (articleId.value) {
-      // Редактирование (PATCH)
-      // Для FormData с файлом обычно используется POST даже для обновления, но DRF поддерживает PATCH с FormData
+
+
       response = await axios.patch<ArticleDetail>(`${API_BASE_URL}/articles/${articleId.value}/`, data, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       router.push({ name: 'ArticleDetail', params: { id: response.data.id } });
     } else {
-      // Создание (POST)
+
       response = await axios.post<ArticleDetail>(`${API_BASE_URL}/articles/`, data, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -257,7 +257,7 @@ const handleSubmit = async () => {
     console.error("Ошибка при отправке формы статьи:", err);
     if (axios.isAxiosError(err) && err.response) {
       if (err.response.status === 400 && typeof err.response.data === 'object') {
-        formErrors.value = err.response.data; // Ошибки валидации полей
+        formErrors.value = err.response.data;
         submitError.value = "Пожалуйста, исправьте ошибки в форме.";
       } else {
         submitError.value = err.response.data?.detail || `Произошла ошибка (${err.response.status}).`;
@@ -275,10 +275,10 @@ onMounted(() => {
   if (articleId.value) {
     fetchArticleData();
   }
-  // Проверка прав (дополнительная, основная на бэкенде и в роутере)
+
   if (!authStore.user || !authStore.user.is_staff /* && !authStore.user.role?.can_manage_articles */) {
-    // Можно показать сообщение или редирект, если пользователь не должен быть здесь
-    // router.replace({ name: 'Home' });
+
+
   }
 });
 

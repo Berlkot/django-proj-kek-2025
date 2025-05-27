@@ -32,22 +32,19 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    "django.contrib.admin", 
+    "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-
-    'rest_framework',
-    'rest_framework_simplejwt',
-    'django_filters',
+    "rest_framework",
+    "rest_framework_simplejwt",
+    "django_filters",
     "corsheaders",
     "django_vite",
-
-    'siteapp.apps.SiteappConfig', 
-    
-    'djoser', # Djoser
+    "siteapp.apps.SiteappConfig",
+    "djoser",
 ]
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -96,19 +93,19 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'siteapp.password_validators.CustomUserAttributeSimilarityValidator',
+        "NAME": "siteapp.password_validators.CustomUserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'siteapp.password_validators.CustomMinimumLengthValidator',
-        'OPTIONS': {
-            'min_length': 8,
-        }
+        "NAME": "siteapp.password_validators.CustomMinimumLengthValidator",
+        "OPTIONS": {
+            "min_length": 8,
+        },
     },
     {
-        'NAME': 'siteapp.password_validators.CustomCommonPasswordValidator',
+        "NAME": "siteapp.password_validators.CustomCommonPasswordValidator",
     },
     {
-        'NAME': 'siteapp.password_validators.CustomNumericPasswordValidator',
+        "NAME": "siteapp.password_validators.CustomNumericPasswordValidator",
     },
 ]
 
@@ -116,8 +113,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'ru-ru'
-TIME_ZONE = 'Europe/Moscow'
+LANGUAGE_CODE = "ru-ru"
+TIME_ZONE = "Europe/Moscow"
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
@@ -128,11 +125,7 @@ USE_TZ = True
 STATIC_ROOT = os.path.normpath(os.path.join(BASE_DIR, "staticfiles"))
 STATIC_URL = "/static/"
 
-DJANGO_VITE = {
-    "default": {
-        "dev_mode": True
-    }
-}
+DJANGO_VITE = {"default": {"dev_mode": True}}
 
 STATICFILES_DIRS = [
     BASE_DIR / "assets",
@@ -145,103 +138,76 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
-AUTH_USER_MODEL = 'siteapp.User'
+AUTH_USER_MODEL = "siteapp.User"
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticatedOrReadOnly', # По умолчанию только чтение для анонимов
+    "DEFAULT_PERMISSION_CLASSES": (
+        "rest_framework.permissions.IsAuthenticatedOrReadOnly",
     ),
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10, # Можете изменить или убрать, если пагинация настраивается отдельно для каждого View
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 10,
 }
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
-    "http://localhost:8000", # django server itself counts as CROS by browser
-    "http://127.0.0.1:8000", # django server itself counts as CROS by browser
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
     "http://127.0.0.1:5173",
 ]
 
-FRONTEND_BASE_URL = os.getenv('FRONTEND_BASE_URL', 'http://localhost:5173' + STATIC_URL)
+FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:5173" + STATIC_URL)
 
 from datetime import timedelta
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60), # Время жизни Access токена
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),    # Время жизни Refresh токена
-    'ROTATE_REFRESH_TOKENS': False,
-    'BLACKLIST_AFTER_ROTATION': True,
-    'UPDATE_LAST_LOGIN': True, # Обновлять last_login пользователя
-
-    'ALGORITHM': 'HS256',
-    'SIGNING_KEY': SECRET_KEY, # Используйте ваш SECRET_KEY
-    'VERIFYING_KEY': None,
-    'AUDIENCE': None,
-    'ISSUER': None,
-
-    'AUTH_HEADER_TYPES': ('Bearer',), # Тип заголовка авторизации
-    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
-    'USER_ID_FIELD': 'id',
-    'USER_ID_CLAIM': 'user_id',
-    'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
-
-    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
-    'TOKEN_TYPE_CLAIM': 'token_type',
-
-    'JTI_CLAIM': 'jti',
-
-    'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
-    'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5), # Не используется, если ROTATE_REFRESH_TOKENS=False
-    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1), # Не используется
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": False,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "UPDATE_LAST_LOGIN": True,
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": SECRET_KEY,
+    "VERIFYING_KEY": None,
+    "AUDIENCE": None,
+    "ISSUER": None,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "user_id",
+    "USER_AUTHENTICATION_RULE": "rest_framework_simplejwt.authentication.default_user_authentication_rule",
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
+    "TOKEN_TYPE_CLAIM": "token_type",
+    "JTI_CLAIM": "jti",
+    "SLIDING_TOKEN_REFRESH_EXP_CLAIM": "refresh_exp",
+    "SLIDING_TOKEN_LIFETIME": timedelta(minutes=5),
+    "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(days=1),
 }
 
 # Djoser
 DJOSER = {
-    'PASSWORD_RESET_CONFIRM_URL': '#/password/reset/confirm/{uid}/{token}', # URL для фронтенда
-    'USERNAME_RESET_CONFIRM_URL': '#/username/reset/confirm/{uid}/{token}', # URL для фронтенда
-    'ACTIVATION_URL': '#/activate/{uid}/{token}', # URL для фронтенда
-    'SEND_ACTIVATION_EMAIL': False,  # Установите True, если настроили email-бэкенд
-    'SEND_CONFIRMATION_EMAIL': False, # Установите True, если настроили email-бэкенд
-    'USERNAME_CHANGED_EMAIL_CONFIRMATION': False, # Если используется смена username
-    'PASSWORD_CHANGED_EMAIL_CONFIRMATION': False,
-    'USER_CREATE_PASSWORD_RETYPE': True, # Требовать повторный ввод пароля при регистрации
-    'SET_PASSWORD_RETYPE': True,
-    'PASSWORD_RESET_CONFIRM_RETYPE': True,
-    'LOGOUT_ON_PASSWORD_CHANGE': True, # Разлогинивать при смене пароля
-    'SERIALIZERS': {
-        'user_create': 'siteapp.serializers.UserCreateSerializer', # Кастомный сериализатор для регистрации
-        'user': 'siteapp.serializers.CurrentUserSerializer',          # Кастомный сериализатор для /users/me/
-        'current_user': 'siteapp.serializers.CurrentUserSerializer',
-        # 'user_delete': 'djoser.serializers.UserDeleteSerializer',
+    "PASSWORD_RESET_CONFIRM_URL": "#/password/reset/confirm/{uid}/{token}",
+    "USERNAME_RESET_CONFIRM_URL": "#/username/reset/confirm/{uid}/{token}",
+    "ACTIVATION_URL": "#/activate/{uid}/{token}",
+    "SEND_ACTIVATION_EMAIL": False,
+    "SEND_CONFIRMATION_EMAIL": False,
+    "USERNAME_CHANGED_EMAIL_CONFIRMATION": False,
+    "PASSWORD_CHANGED_EMAIL_CONFIRMATION": False,
+    "USER_CREATE_PASSWORD_RETYPE": True,
+    "SET_PASSWORD_RETYPE": True,
+    "PASSWORD_RESET_CONFIRM_RETYPE": True,
+    "LOGOUT_ON_PASSWORD_CHANGE": True,
+    "SERIALIZERS": {
+        "user_create": "siteapp.serializers.UserCreateSerializer",
+        "user": "siteapp.serializers.CurrentUserSerializer",
+        "current_user": "siteapp.serializers.CurrentUserSerializer",
     },
-    'PERMISSIONS': { # Если нужны более строгие разрешения
-        # 'activation': ['rest_framework.permissions.AllowAny'],
-        # 'password_reset': ['rest_framework.permissions.AllowAny'],
-        # 'password_reset_confirm': ['rest_framework.permissions.AllowAny'],
-        # 'set_password': ['djoser.permissions.CurrentUserOrAdmin'],
-        # 'username_reset': ['rest_framework.permissions.AllowAny'],
-        # 'username_reset_confirm': ['rest_framework.permissions.AllowAny'],
-        # 'set_username': ['djoser.permissions.CurrentUserOrAdmin'],
-        # 'user_create': ['rest_framework.permissions.AllowAny'],
-        # 'user_delete': ['djoser.permissions.CurrentUserOrAdmin'],
-        # 'user': ['djoser.permissions.CurrentUserOrAdmin'], # Только для /users/me/
-        # 'user_list': ['rest_framework.permissions.IsAdminUser'], # Только админ может видеть список всех пользователей
-        # 'token_create': ['rest_framework.permissions.AllowAny'],
-        # 'token_destroy': ['rest_framework.permissions.IsAuthenticated'],
-    },
-    'LOGIN_FIELD': 'email', # Используем email для логина
-    'HIDE_USERS': True, # Не показывать список всех пользователей по /users/ (если не переопределено в PERMISSIONS)
-    'EMAIL': {
-        # 'activation': 'djoser.email.ActivationEmail',
-        # 'confirmation': 'djoser.email.ConfirmationEmail',
-        # 'password_reset': 'djoser.email.PasswordResetEmail',
-        # 'password_changed_confirmation': 'djoser.email.PasswordChangedConfirmationEmail',
-        # 'username_changed_confirmation': 'djoser.email.UsernameChangedConfirmationEmail',
-        # 'username_reset': 'djoser.email.UsernameResetEmail',
-    }
+    "PERMISSIONS": {},
+    "LOGIN_FIELD": "email",
+    "HIDE_USERS": True,
+    "EMAIL": {},
 }
