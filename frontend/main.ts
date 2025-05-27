@@ -18,13 +18,13 @@ import {
   faBars,
   faTimes,
   faChevronLeft,
-  faChevronDown, // faChevronDown для мобильных табов (если нужен будет аккордеон)
+  faChevronDown,
   faUser,
   faPhone,
-  faEnvelope, // Для информации об авторе
-  faPaw, // Для клейма/чипа (можно заменить)
-  faCalendarAlt, // Для даты находки/потери
-  faTag, // Для клички
+  faEnvelope,
+  faPaw,
+  faCalendarAlt,
+  faTag,
   faVenusMars,
   faFilter,
   faPencilAlt,
@@ -60,16 +60,16 @@ const app = createApp(App)
 
 app.use(createPinia())
 
-// Инициализация состояния аутентификации ПОСЛЕ создания Pinia
-const authStore = useAuthStore(); // Получаем экземпляр хранилища
-authStore.initAuth().then(() => { // Вызываем initAuth для загрузки пользователя, если токен есть
-    app.use(router); // Подключаем роутер после возможной асинхронной инициализации
+
+const authStore = useAuthStore();
+authStore.initAuth().then(() => {
+    app.use(router);
     app.component('font-awesome-icon', FontAwesomeIcon);
     app.mount('#app');
-}).catch(error => { // Обработка ошибок инициализации, если необходимо
+}).catch(error => {
     console.error("Auth initialization failed:", error);
-    // Можно показать пользователю сообщение об ошибке или выполнить другие действия
-    // Важно все равно смонтировать приложение
+
+
     app.use(router);
     app.component('font-awesome-icon', FontAwesomeIcon);
     app.mount('#app');

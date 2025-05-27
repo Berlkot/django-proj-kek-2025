@@ -1,13 +1,11 @@
 <template>
-  <!-- Оборачиваем в router-link, чтобы вся карточка была кликабельной -->
-  <router-link :to="adLink" class="group block bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col h-full">
+
+  <router-link :to="adLink"
+    class="group block bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col h-full">
     <div class="relative overflow-hidden rounded-t-lg">
-      <img
-        :src="imageUrl"
-        :alt="title"
-        class="w-full h-48 object-cover group-hover:opacity-80 transition-opacity duration-300"
-      />
-      <!-- Можно добавить бейдж типа объявления, если нужно -->
+      <img :src="imageUrl" :alt="title"
+        class="w-full h-48 object-cover group-hover:opacity-80 transition-opacity duration-300" />
+
       <span v-if="adType" class="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded">
         {{ adType }}
       </span>
@@ -16,7 +14,7 @@
       <h3 class="text-lg font-semibold text-gray-800 mb-1 truncate group-hover:text-green-600 transition-colors">
         {{ title }}
       </h3>
-      <!-- Отображаем вид животного, если есть -->
+
       <p v-if="speciesName" class="text-xs text-gray-500 mb-1">{{ speciesName }}</p>
       <p class="text-sm text-gray-600 mb-3 flex-grow h-16 overflow-hidden text-ellipsis line-clamp-3">
         {{ description }}
@@ -34,21 +32,19 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-// formatTimeAgo будет передаваться или импортироваться глобально/из утилит
-// import { formatTimeAgo } from '../utils/time'; // Если используем локально
 
 const props = defineProps<{
-  id: number; // ID объявления для ссылки
+  id: number;
   imageUrl: string;
   title: string;
   description: string;
   location: string;
   timeAgo: string;
-  adType?: string; // Тип объявления (статус)
-  speciesName?: string; // Вид животного
+  adType?: string;
+  speciesName?: string;
 }>();
 
-const adLink = computed(() => `/advertisement/${props.id}`); // Замените на ваш реальный маршрут к детальной странице объявления
+const adLink = computed(() => `/advertisement/${props.id}`);
 </script>
 
 <style scoped>

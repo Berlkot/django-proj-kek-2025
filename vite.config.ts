@@ -1,7 +1,7 @@
 // frontend/vite.config.ts
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import path from 'path' 
+import path from 'path'
 
 export default defineConfig({
   base: "/static/",
@@ -20,13 +20,13 @@ export default defineConfig({
       },
     },
   },
-  // server: {
-  //   port: 5173, 
-  //   strictPort: true,
-  //   hmr: { // Hot Module Replacement
-  //     // Это может быть полезно, если вы работаете в Docker или удаленной среде
-  //     // clientPort: 443, // Если используется прокси для HTTPS
-  //     // host: 'localhost', // Убедитесь, что это соответствует тому, как Django пытается подключиться
-  //   }
-  // }
+
+
+
+
+
+
+
+
+
 })

@@ -94,23 +94,23 @@ export const useAuthStore = defineStore('auth', {
       this.error = null;
       try {
         await axios.post(`${API_BASE_URL}/auth/users/`, userData);
-        // После успешной регистрации автоматически логиним пользователя
-        // Djoser не возвращает токены при регистрации, поэтому вызываем login
+
+
         console.log(`Registration successful for ${userData.email}. Attempting to login...`);
-        // Важно: передаем email и password из исходных данных регистрации
+
         const loginSuccess = await this.login({ email: userData.email, password: userData.password });
         if (!loginSuccess) {
-            // Если логин после регистрации не удался, возможно, стоит установить специфическую ошибку
-            // this.error все еще будет содержать ошибку от вызова this.login()
+
+
             console.warn(`Auto-login after registration failed for ${userData.email}. User might need to login manually.`);
-            // Не возвращаем false, так как регистрация прошла, но авто-логин нет.
-            // Фронтенд сам решит, что делать (например, показать сообщение о необходимости ручного входа)
-            // Однако, если мы хотим, чтобы RegisterPage.vue считал это неудачей регистрации, то return false
-            // Но тогда registrationSuccess не установится в true.
-            // Давайте считать, что если авто-логин не удался, то это ошибка для процесса регистрации в целом.
-            return false; // Указываем, что общий процесс (регистрация + автологин) не завершился идеально
+
+
+
+
+
+            return false;
         }
-        return true; // Успешная регистрация И авто-логин
+        return true;
       } catch (err: any) {
          let errorMessagesArray: string[] = [];
         if (axios.isAxiosError(err) && err.response) {
@@ -140,7 +140,7 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async fetchUser() {
-      // ... (код без изменений) ...
+
       if (!this.accessToken) {
         if (this.isAuthenticated) this.clearAuthData();
         return;
@@ -165,7 +165,7 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async tryRefreshTokenAndFetchUser() {
-      // ... (код без изменений) ...
+
       if (!this.refreshToken) {
         this.clearAuthData();
         return;

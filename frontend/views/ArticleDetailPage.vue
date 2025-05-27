@@ -15,7 +15,7 @@
 
     <div v-else-if="article" class="article-detail-page">
       <div class="container mx-auto max-w-3xl px-4 pt-8 md:pt-12">
-        <!-- ... (Главное изображение, Заголовок, Информация об авторе статьи - уже должно работать с display_name) ... -->
+
         <div
           v-if="article.main_image_url"
           class="mb-6 md:mb-8 rounded-lg overflow-hidden shadow-lg"
@@ -97,7 +97,7 @@
           v-html="article.content"
         ></div>
 
-        <!-- Блок Комментариев (НОВЫЙ) -->
+
         <div class="mt-10 mb-10 md:mt-16 pt-8 border-t border-gray-200">
           <h2 class="text-2xl font-semibold text-gray-800 mb-6">
             Комментарии ({{ article.comments ? article.comments.length : 0 }})
@@ -117,7 +117,7 @@
                 <div class="flex-grow">
                   <p class="font-semibold text-gray-900 text-sm">
                     {{ comment.user.display_name || comment.user.username }}
-                    <!-- Имя пользователя -->
+
                   </p>
                   <p class="text-xs text-gray-500 mb-1.5">
                     {{ formatTimeAgo(comment.date_created) }}
@@ -151,7 +151,7 @@
                   <p v-else class="text-gray-700 text-sm whitespace-pre-line">{{ comment.text }}</p>
                 </div>
               </div>
-              <!-- Кнопки управления комментарием -->
+
               <div
                 v-if="authStore.isAuthenticated && authStore.user"
                 class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1"
@@ -192,7 +192,7 @@
           </div>
           <p v-else class="text-gray-600">Комментариев пока нет. Будьте первым!</p>
 
-          <!-- Форма добавления комментария -->
+
           <div class="mt-8 pt-6 border-t border-gray-200">
             <h3 class="text-xl font-semibold text-gray-800 mb-3">Оставить комментарий</h3>
             <div v-if="authStore.isAuthenticated">
@@ -231,9 +231,9 @@
             </div>
           </div>
         </div>
-        <!-- Конец блока комментариев -->
+
       </div>
-      <!-- Конец контейнера max-w-3xl -->
+
     </div>
     <div v-else class="flex justify-center items-center min-h-[calc(100vh-200px)]">
       <p class="text-xl text-gray-500">Статья не найдена.</p>
@@ -245,7 +245,7 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
-import type { ArticleDetail, Comment as ArticleComment, Author } from '../types' // Убедимся, что Comment импортирован и переименован, если нужно
+import type { ArticleDetail, Comment as ArticleComment, Author } from '../types'
 import { formatTimeAgo, formatDate } from '../utils/time'
 import { useAuthStore } from '../stores/auth'
 import { library } from '@fortawesome/fontawesome-svg-core'
@@ -282,11 +282,11 @@ const fetchArticleDetail = async (articleId: string | number) => {
   article.value = null
   deleteError.value = null
   try {
-    // Убедимся, что ArticleDetailSerializer на бэке включает поле 'comments'
+
     const response = await axios.get<ArticleDetail>(`${API_BASE_URL}/articles/${articleId}/`)
     article.value = response.data
     if (article.value && !article.value.comments) {
-      // Фоллбэк, если comments не пришел
+
       article.value.comments = []
     }
   } catch (err) {
@@ -316,7 +316,7 @@ const submitArticleComment = async () => {
   try {
     const response = await axios.post<ArticleComment>(
       `${API_BASE_URL}/articles/${article.value.id}/comments/`,
-      { text: newArticleCommentMessage.value }, // Поле в CommentSerializer - 'text'
+      { text: newArticleCommentMessage.value },
     )
     article.value.comments.unshift(response.data)
     newArticleCommentMessage.value = ''
@@ -381,15 +381,15 @@ const deleteArticleComment = async (commentId: number) => {
 
 const canManageThisArticle = computed(() => {
   if (!authStore.isAuthenticated || !authStore.user || !article.value) return false
-  // Администратор Django
+
   if (authStore.user.is_staff) return true
-  // Пользователь с правом управлять любыми статьями
+
   if (
     authStore.user.role_permissions?.can_delete_any_article ||
     authStore.user.role_permissions?.can_edit_any_article
   )
     return true
-  // Автор статьи с правом управлять своими статьями
+
   if (article.value.author?.id === authStore.user.id) {
     if (
       authStore.user.role_permissions?.can_delete_own_article ||
@@ -413,9 +413,9 @@ const handleDeleteArticle = async () => {
     deleteError.value = null
     try {
       await axios.delete(`${API_BASE_URL}/articles/${article.value.id}/`)
-      // После успешного удаления перенаправляем на страницу списка статей
+
       router.push({ name: 'Articles' })
-      // Можно добавить уведомление об успехе, если используете систему уведомлений
+
     } catch (err) {
       console.error('Ошибка удаления статьи:', err)
       deleteError.value = axios.isAxiosError(err)
@@ -443,7 +443,7 @@ watch(
 </script>
 
 <style>
-/* Стили для контента, генерируемого v-html */
+
 .article-content h1,
 .article-content h2,
 .article-content h3,
@@ -455,7 +455,7 @@ watch(
 }
 .article-content h2 {
   @apply text-2xl sm:text-3xl;
-} /* Пример из макета "Как назначают лечение" */
+}
 .article-content h3 {
   @apply text-xl sm:text-2xl;
 }
@@ -495,7 +495,7 @@ watch(
 }
 
 .whitespace-pre-line {
-  /* Добавьте, если еще нет */
+
   white-space: pre-line;
 }
 </style>
