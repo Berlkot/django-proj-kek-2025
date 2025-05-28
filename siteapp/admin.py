@@ -140,29 +140,35 @@ class RoleAdmin(admin.ModelAdmin):
         return ", ".join(perms) if perms else "Нет прав"
 
 
-@admin.action(description="Проверить наличие активных объявлений у пользователей")
-def check_active_ads(modeladmin, request, queryset):
-    users_with_active_ads = 0
-    users_without_active_ads = 0
+@admin.action(description='Проверить/Показать ID активных объявлений пользователей')
+def show_active_ad_ids_for_users(modeladmin, request, queryset):
+    messages_to_user = []
     active_status = None
     try:
         active_status = AdStatus.objects.get(name="Активно")
     except AdStatus.DoesNotExist:
-        modeladmin.message_user(request, "Статус 'Активно' не найден.", level="error")
+        modeladmin.message_user(request, "Ошибка: Статус 'Активно' для объявлений не найден в базе данных.", level='error')
         return
 
     for user in queryset:
-
-        if Advertisement.objects.filter(user=user, status=active_status).exists():
-            users_with_active_ads += 1
+        user_has_active_ads = Advertisement.objects.filter(user=user, status=active_status).exists()
+        
+        if user_has_active_ads:
+            active_ad_ids = Advertisement.objects.filter(user=user, status=active_status) \
+                                             .values_list('id', flat=True) \
+                                             .order_by('-publication_date')[:5]
+            
+            ids_str = ", ".join(map(str, active_ad_ids))
+            if len(active_ad_ids) == 5 and Advertisement.objects.filter(user=user, status=active_status).count() > 5:
+                ids_str += ", ..."
+            messages_to_user.append(f"Пользователь {user.email}: есть активные объявления (ID: {ids_str}).")
         else:
-            users_without_active_ads += 1
-
-    modeladmin.message_user(
-        request,
-        f"{users_with_active_ads} пользователей имеют активные объявления. "
-        f"{users_without_active_ads} пользователей не имеют активных объявлений.",
-    )
+            messages_to_user.append(f"Пользователь {user.email}: нет активных объявлений.")
+    
+    if not messages_to_user:
+        modeladmin.message_user(request, "Не выбраны пользователи.")
+    else:
+        modeladmin.message_user(request, " ".join(messages_to_user))
 
 
 @admin.action(
@@ -194,7 +200,7 @@ class UserAdmin(BaseUserAdmin):
     search_fields = ("email", "username", "display_name")
     ordering = ("email",)
     raw_id_fields = ("role", "region")
-    actions = [check_active_ads, deactivate_users]
+    actions = [show_active_ad_ids_for_users, deactivate_users]
     fieldsets = (
         (None, {"fields": ("email", "password")}),
         (
