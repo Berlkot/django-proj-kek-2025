@@ -4,6 +4,7 @@ from django.utils.html import format_html
 from django.http import HttpResponse
 import io, os
 from django.utils.translation import gettext_lazy as _
+from django.db.models import Count
 from django.conf import settings
 from .models import (
     Region,
@@ -329,14 +330,7 @@ class AnimalInShelterForShelterInline(admin.TabularInline):
 
 @admin.register(Shelter)
 class ShelterAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "name",
-        "region",
-        "address",
-        "website_link",
-        "active_animals_count",
-    )
+    list_display = ('id', 'name', 'region', 'address', 'website_link', 'get_animals_count')
     list_filter = ("region",)
     search_fields = ("name", "address", "region__name", "website")
     raw_id_fields = ("region",)
@@ -347,10 +341,17 @@ class ShelterAdmin(admin.ModelAdmin):
         if obj.website:
             return format_html('<a href="{0}" target="_blank">{0}</a>', obj.website)
         return "–"
+    
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        queryset = queryset.annotate(
+            _animals_count_annotated=Count('animalinshelter', distinct=True) 
+        )
+        return queryset
 
-    @admin.display(description=_("Кол-во животных"))
-    def active_animals_count(self, obj):
-        return obj.animalinshelter_set.count()
+    @admin.display(description=_("Кол-во животных"), ordering='_animals_count_annotated')
+    def get_animals_count(self, obj):
+        return obj._animals_count_annotated
 
 
 @admin.register(AnimalInShelter)
@@ -636,15 +637,7 @@ class ArticleCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Article)
 class ArticleAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "title",
-        "author_email",
-        "publication_date_formatted",
-        "comment_count",
-        "image_preview_list",
-        "list_categories",
-    )
+    list_display = ('id', 'title', 'author_email', 'publication_date_formatted', 'get_comments_count', 'image_preview_list', 'list_categories')
     list_filter = ("publication_date", "author", "categories")
     search_fields = ("title", "content", "author__email", "author__username")
     raw_id_fields = ("author",)
@@ -663,6 +656,14 @@ class ArticleAdmin(admin.ModelAdmin):
         "publication_date",
     )
 
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        queryset = queryset.annotate(
+            _comments_count_annotated=Count('comments', distinct=True)
+        )
+        return queryset
+
+
     @admin.display(description=_("Категории"))
     def list_categories(self, obj):
         return ", ".join([c.name for c in obj.categories.all()])
@@ -675,9 +676,9 @@ class ArticleAdmin(admin.ModelAdmin):
     def publication_date_formatted(self, obj):
         return obj.publication_date.strftime("%d.%m.%Y %H:%M")
 
-    @admin.display(description=_("Кол-во комментариев"))
-    def comment_count(self, obj):
-        return obj.comments.count()
+    @admin.display(description=_("Кол-во комментариев"), ordering='_comments_count_annotated')
+    def get_comments_count(self, obj):
+        return obj._comments_count_annotated
 
     @admin.display(description=_("Превью изображения"))
     def image_preview_admin(self, obj):
