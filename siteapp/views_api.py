@@ -36,6 +36,7 @@ from .serializers import (
     CommentSerializer,
     AdvertisementManageSerializer,
     BreedSerializer,
+    RegionActivitySerializer
 )
 
 from .filters import AdvertisementFilter, AGE_CHOICES
@@ -82,24 +83,45 @@ class HomePageDataAPIView(APIView):
 
         serializer_context = {"request": request}
 
-        recent_ads_serializer = HomePageAdSerializer(
-            recent_ads, many=True, context=serializer_context
-        )
-        main_article_serializer = HomePageArticleSerializer(
-            main_article_qs, many=True, context=serializer_context
-        )
-        side_articles_serializer = HomePageArticleSerializer(
-            side_articles_qs, many=True, context=serializer_context
-        )
+        top_n_regions = 5 # Сколько регионов показывать
+        try:
+            # Получаем ID активного статуса
+            active_status = AdStatus.objects.get(name="Активно")
+            # Аннотируем регионы количеством активных объявлений
+            # Фильтруем объявления по статусу "Активно" и чтобы у пользователя был указан регион
+            # Группируем по user__region и считаем количество объявлений (ad_count)
+            # Затем сортируем по убыванию ad_count
+            # distinct=True для Count, чтобы избежать двойного подсчета, если есть другие join'ы (здесь не критично, но хорошая практика)
+            region_activity = Advertisement.objects.filter(status=active_status, user__region__isnull=False) \
+                .values('user__region__id', 'user__region__name') \
+                .annotate(ad_count=Count('id', distinct=True)) \
+                .order_by('-ad_count')[:top_n_regions]
+            
+            # Преобразуем queryset values в формат, ожидаемый сериализатором
+            # (source='region__id' и 'region__name' в сериализаторе ожидают ключи 'region__id' и 'region__name')
+            top_regions_data = [{'region__id': r['user__region__id'], 'region__name': r['user__region__name'], 'ad_count': r['ad_count']} for r in region_activity]
+
+        except AdStatus.DoesNotExist:
+            print("WARNING: AdStatus 'Активно' not found for top regions widget.")
+            top_regions_data = []
+        except Exception as e:
+            print(f"Error fetching top regions: {e}")
+            top_regions_data = []
+
+
+        serializer_context = {'request': request}
+
+        recent_ads_serializer = HomePageAdSerializer(recent_ads, many=True, context=serializer_context)
+        main_article_serializer = HomePageArticleSerializer(main_article_qs, many=True, context=serializer_context)
+        side_articles_serializer = HomePageArticleSerializer(side_articles_qs, many=True, context=serializer_context)
+        top_regions_serializer = RegionActivitySerializer(top_regions_data, many=True, context=serializer_context)
+
 
         data = {
-            "recent_ads": recent_ads_serializer.data,
-            "main_article": (
-                main_article_serializer.data[0]
-                if main_article_serializer.data
-                else None
-            ),
-            "side_articles": side_articles_serializer.data,
+            'recent_ads': recent_ads_serializer.data,
+            'main_article': main_article_serializer.data[0] if main_article_serializer.data else None,
+            'side_articles': side_articles_serializer.data,
+            'top_regions': top_regions_serializer.data, # <-- Новые данные
         }
         return Response(data, status=status.HTTP_200_OK)
 

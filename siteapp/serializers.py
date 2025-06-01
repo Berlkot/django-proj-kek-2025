@@ -764,3 +764,9 @@ class BreedSerializer(serializers.ModelSerializer):
     class Meta:
         model = Breed
         fields = ["id", "name", "species_id"]
+
+
+class RegionActivitySerializer(serializers.Serializer):
+    id = serializers.IntegerField(source='region__id')
+    name = serializers.CharField(source='region__name')
+    ad_count = serializers.IntegerField()

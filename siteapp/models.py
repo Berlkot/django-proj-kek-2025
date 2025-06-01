@@ -217,6 +217,12 @@ class Animal(models.Model):
         null=False,
         default=GENDER_UNKNOWN,
     )
+    shelters = models.ManyToManyField(
+        'Shelter',
+        through='AnimalInShelter',
+        related_name='animals_in_shelter',
+        verbose_name=_("приюты, в которых состоит")
+    )
 
     class Meta:
         verbose_name = _("животное")
@@ -234,41 +240,39 @@ class Shelter(models.Model):
     name = models.CharField(_("название приюта"), max_length=200)
     address = models.CharField(_("адрес"), max_length=255)
     contacts = models.TextField(_("контакты"), blank=True)
-    region = models.ForeignKey(
-        Region, on_delete=models.PROTECT, verbose_name=_("регион")
-    )
-    website = models.URLField(
-        _("веб-сайт приюта"), max_length=300, blank=True, null=True
+    region = models.ForeignKey(Region, on_delete=models.PROTECT, verbose_name=_("регион"))
+    website = models.URLField(_("веб-сайт приюта"), max_length=300, blank=True, null=True)
+
+    animals = models.ManyToManyField(
+        Animal,
+        through='AnimalInShelter',
+        verbose_name=_("животные в приюте"),
+        blank=True
     )
 
     class Meta:
         verbose_name = _("приют")
         verbose_name_plural = _("приюты")
-        ordering = ["name"]
+        ordering = ['name']
 
     def __str__(self):
         return self.name
 
 
 class AnimalInShelter(models.Model):
-    animal = models.ForeignKey(
-        Animal, on_delete=models.CASCADE, verbose_name=_("животное")
-    )
-    shelter = models.ForeignKey(
-        Shelter, on_delete=models.CASCADE, verbose_name=_("приют")
-    )
-    date_admitted = models.DateField(
-        _("дата поступления"), auto_now_add=True, null=True, blank=True
-    )
+    animal = models.ForeignKey(Animal, on_delete=models.CASCADE, verbose_name=_("животное"))
+    shelter = models.ForeignKey(Shelter, on_delete=models.CASCADE, verbose_name=_("приют"))
+    
+    date_admitted = models.DateField(_("дата поступления"), auto_now_add=True, null=True, blank=True)
 
     class Meta:
         verbose_name = _("животное в приюте")
         verbose_name_plural = _("животные в приютах")
-        unique_together = ("animal", "shelter")
-        ordering = ["shelter", "animal"]
+        unique_together = ('animal', 'shelter')
+        ordering = ['shelter', 'animal', '-date_admitted']
 
     def __str__(self):
-        return f"{self.animal} в {self.shelter}"
+        return f"{self.animal} в {self.shelter} (с {self.date_admitted or 'неизвестной даты'})"
 
 
 class ActiveAdvertisementManager(models.Manager):
