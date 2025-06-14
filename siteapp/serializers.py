@@ -19,6 +19,7 @@ from django.utils import timezone
 from dateutil.relativedelta import relativedelta
 from djoser.serializers import UserCreateSerializer as BaseUserCreateSerializer
 from djoser.serializers import UserSerializer as BaseUserSerializer
+from django.utils.translation import gettext_lazy as _
 
 
 class CommentAuthorSerializer(serializers.ModelSerializer):
@@ -515,22 +516,23 @@ class UserCreateSerializer(BaseUserCreateSerializer):
             "display_name",
             "first_name",
             "last_name",
+            'phone_number'
         )
 
     def create(self, validated_data):
 
-        print("adafaf")
 
         if "display_name" not in validated_data or not validated_data.get(
             "display_name"
         ):
             if validated_data.get("username"):
                 validated_data["display_name"] = validated_data.get("username")
+        if 'phone_number' in validated_data and not validated_data['phone_number']:
+            validated_data['phone_number'] = None
 
         user = super().create(validated_data)
 
         try:
-            print(f"Attempting to assign default role to user: {user.email}")
             default_role, created = Role.objects.get_or_create(
                 name="Пользователь",
                 defaults={
@@ -541,15 +543,8 @@ class UserCreateSerializer(BaseUserCreateSerializer):
                     "can_delete_own_comment": True,
                 },
             )
-            if created:
-                print(
-                    f"Default role 'Пользователь' was created with default permissions."
-                )
             user.role = default_role
             user.save(update_fields=["role"])
-            print(
-                f"Successfully assigned role '{user.role.name if user.role else 'None'}' to user {user.email}"
-            )
         except Exception as e:
             print(
                 f"ERROR: Could not assign default role to user {user.email}. Error: {e}"
@@ -578,7 +573,7 @@ class RolePermissionsSerializer(serializers.ModelSerializer):
 
 
 class CurrentUserSerializer(BaseUserSerializer):
-    avatar_url = serializers.CharField(read_only=True)
+    avatar_url = serializers.SerializerMethodField(method_name='get_absolute_avatar_url')
     role_name = serializers.CharField(
         source="role.name", read_only=True, allow_null=True
     )
@@ -613,6 +608,15 @@ class CurrentUserSerializer(BaseUserSerializer):
             "avatar_url",
             "role_permissions",
         )
+    def get_absolute_avatar_url(self, obj: User):
+        request = self.context.get('request')
+        relative_avatar_url = obj.avatar_url
+
+        if relative_avatar_url and request:
+            return request.build_absolute_uri(relative_avatar_url)
+        elif relative_avatar_url:
+            return relative_avatar_url
+        return None 
 
 
 class ArticleManageSerializer(serializers.ModelSerializer):
@@ -641,20 +645,26 @@ class ArticleManageSerializer(serializers.ModelSerializer):
 
 
 class AnimalNestedManageSerializer(serializers.ModelSerializer):
-    species = serializers.PrimaryKeyRelatedField(queryset=Species.objects.all())
-    breed = serializers.PrimaryKeyRelatedField(
-        queryset=Breed.objects.all(), allow_null=True, required=False
-    )
-    color = serializers.PrimaryKeyRelatedField(
-        queryset=AnimalColor.objects.all(), allow_null=True, required=False
-    )
-    gender = serializers.ChoiceField(
-        choices=Animal.GENDER_CHOICES, allow_null=True, required=False
-    )
+    species = serializers.PrimaryKeyRelatedField(queryset=Species.objects.all(), allow_null=False)
+    breed = serializers.PrimaryKeyRelatedField(queryset=Breed.objects.all(), allow_null=True, required=False)
+    color = serializers.PrimaryKeyRelatedField(queryset=AnimalColor.objects.all(), allow_null=True, required=False)
+    gender = serializers.ChoiceField(choices=Animal.GENDER_CHOICES, allow_null=True, required=False)
 
     class Meta:
         model = Animal
-        fields = ["name", "birth_date", "species", "breed", "color", "gender"]
+        fields = ['name', 'birth_date', 'species', 'breed', 'color', 'gender']
+
+    def validate(self, data):
+        species = data.get('species')
+        breed = data.get('breed')
+
+        if species and breed:
+            if breed.species != species:
+                raise serializers.ValidationError({
+                    'breed': _("Выбранная порода '{breed_name}' не соответствует выбранному виду '{species_name}'.")
+                             .format(breed_name=breed.name, species_name=species.name)
+                })
+        return data
 
 
 class AdPhotoManageSerializer(serializers.ModelSerializer):
@@ -662,7 +672,6 @@ class AdPhotoManageSerializer(serializers.ModelSerializer):
     class Meta:
         model = AdPhoto
         fields = ["id", "image"]
-
 
 class AdvertisementManageSerializer(serializers.ModelSerializer):
     animal_data = AnimalNestedManageSerializer(write_only=True)
@@ -684,35 +693,65 @@ class AdvertisementManageSerializer(serializers.ModelSerializer):
     def validate_status(self, value):
         user = self.context["request"].user
 
-        allowed_statuses_for_user = ["Потеряно", "Найдено", "Отдам в добрые руки"]
+        if self.instance and self.instance.user == user and not (user.is_staff or (user.role and user.role.can_manage_any_advertisement)):
+            allowed_transitions = { 
+                "Потеряно": ["Найдено владельцем", "В архиве"],
+                "Найдено": ["Передано владельцу", "В архиве"],
 
-        if not self.instance and not (
-            user.is_staff or (user.role and user.role.can_manage_any_advertisement)
-        ):
-            if value.name not in allowed_statuses_for_user:
-                raise serializers.ValidationError(
-                    f"Вы не можете установить статус '{value.name}'. Разрешенные статусы: {', '.join(allowed_statuses_for_user)}."
-                )
-
-        elif (
-            self.instance
-            and self.instance.user == user
-            and not (
-                user.is_staff or (user.role and user.role.can_manage_any_advertisement)
-            )
-        ):
-
-            pass
+            }
+            if self.instance.status.name in allowed_transitions and value.name not in allowed_transitions[self.instance.status.name]:
+                raise serializers.ValidationError(f"Вы не можете изменить статус с '{self.instance.status.name}' на '{value.name}'.")
+            elif self.instance.status.name not in allowed_transitions and value.id != self.instance.status_id:
+                 raise serializers.ValidationError("Вы не можете изменить текущий статус объявления.")
 
         return value
+    
+    def validate(self, data):
+        """
+        Общая валидация данных.
+        """
+
+        user = self.context['request'].user
+        description = data.get('description')
+        latitude = data.get('latitude')
+        longitude = data.get('longitude')
+
+        if not self.instance and description:
+            active_like_statuses = AdStatus.objects.filter(name__in=["Найдено", "Потеряно", "Требует модерации"])
+            
+            queryset = Advertisement.objects.filter(
+                user=user,
+                description__iexact=description,
+                status__in=active_like_statuses
+            )
+
+            if latitude is not None and longitude is not None:
+                queryset = queryset.filter(latitude=latitude, longitude=longitude)
+
+            if queryset.exists():
+                raise serializers.ValidationError(
+                    _("У вас уже есть активное объявление с похожим описанием. Пожалуйста, проверьте ваши существующие объявления.")
+                )
+        return data
+
 
     def create(self, validated_data):
-        animal_data = validated_data.pop("animal_data")
-
+        animal_data = validated_data.pop('animal_data')
         animal = Animal.objects.create(**animal_data)
+        
+        validated_data['animal'] = animal
+        validated_data['user'] = self.context['request'].user
 
-        validated_data["animal"] = animal
-        validated_data["user"] = self.context["request"].user
+        if 'status' not in validated_data or not validated_data.get('status'):
+            try:
+                default_status_name = "Требует модерации"
+                default_status = AdStatus.objects.get(name=default_status_name)
+                validated_data['status'] = default_status
+            except AdStatus.DoesNotExist:
+                raise serializers.ValidationError(
+                    {"status": f"Ошибка конфигурации: статус по умолчанию '{default_status_name}' не найден."}
+                )
+        
         advertisement = Advertisement.objects.create(**validated_data)
 
         uploaded_photos = self.context["request"].FILES.getlist("photos_upload")
@@ -724,24 +763,26 @@ class AdvertisementManageSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
 
         animal_instance = instance.animal
-        print(validated_data, "animal_name" in validated_data)
 
         animal_data = validated_data.pop("animal_data", None)
 
-        if "name" in animal_data:
-            animal_instance.name = animal_data.pop("name")
-        if "birth_date" in animal_data:
-            animal_instance.birth_date = animal_data.pop("birth_date")
-        if "species" in animal_data:
-            animal_instance.species = animal_data.pop("species")
-        if "breed" in animal_data:
-            animal_instance.breed = animal_data.pop("breed")
-        if "color" in animal_data:
-            animal_instance.color = animal_data.pop("color")
-        if "gender" in animal_data:
-            animal_instance.gender = animal_data.pop("gender")
+        if animal_data: 
+            if "name" in animal_data: animal_instance.name = animal_data.pop("name", animal_instance.name)
+            if "birth_date" in animal_data: animal_instance.birth_date = animal_data.pop("birth_date", animal_instance.birth_date)
+            if "species" in animal_data: animal_instance.species = animal_data.pop("species", animal_instance.species)
+            if "breed" in animal_data: animal_instance.breed = animal_data.pop("breed", animal_instance.breed)
+            if "color" in animal_data: animal_instance.color = animal_data.pop("color", animal_instance.color)
+            if "gender" in animal_data: animal_instance.gender = animal_data.pop("gender", animal_instance.gender)
+            animal_instance.save()
 
-        animal_instance.save()
+        user = self.context['request'].user
+        if 'status' in validated_data and not (user.is_staff or (user.role and user.role.can_manage_any_advertisement)):
+            current_status_in_request = validated_data.get('status')
+            if current_status_in_request and current_status_in_request != instance.status:
+                 try:
+                    self.validate_status(current_status_in_request)
+                 except serializers.ValidationError:
+                    validated_data.pop('status')
 
         instance = super().update(instance, validated_data)
 

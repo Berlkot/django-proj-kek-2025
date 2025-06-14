@@ -110,7 +110,7 @@
             >
               <div class="flex items-start space-x-4">
                 <img
-                  :src="comment.user.avatar_url || '/images/avatar-placeholder.png'"
+                  :src="comment.user.avatar_url || '/images/no-image-data.png'"
                   :alt="comment.user.display_name || 'Аватар комментатора'"
                   class="w-10 h-10 rounded-full object-cover flex-shrink-0"
                 />

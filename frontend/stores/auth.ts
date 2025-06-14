@@ -51,89 +51,75 @@ export const useAuthStore = defineStore('auth', {
       delete axios.defaults.headers.common['Authorization'];
     },
 
-    async login(credentials: { email: string; password: any }) {
+    async login(credentials: { email: string; password: any }): Promise<{ success: boolean; errors?: Record<string, any> }> {
       this.loading = true;
-      this.error = null;
+      this.error = null; // Общая ошибка
+      let apiErrors: Record<string, any> | undefined = undefined;
+
       try {
         const response = await axios.post(`${API_BASE_URL}/auth/jwt/create/`, credentials);
         const { access, refresh } = response.data;
         this.setTokens(access, refresh);
         await this.fetchUser();
-        return true;
+        return { success: true };
       } catch (err: any) {
         this.clearAuthData();
-        let errorMessagesArray: string[] = [];
         if (axios.isAxiosError(err) && err.response) {
-            const errors = err.response.data;
-            if (typeof errors === 'object' && errors !== null) {
-                Object.values(errors).forEach(messagesForField => {
-                    if (Array.isArray(messagesForField)) {
-                        errorMessagesArray.push(...messagesForField.map(msg => String(msg)));
-                    } else {
-                        errorMessagesArray.push(String(messagesForField));
-                    }
-                });
-            } else if (typeof errors === 'string') {
-                errorMessagesArray.push(errors);
-            }
-        }
-        if (errorMessagesArray.length > 0) {
-            this.error = errorMessagesArray.join('; ');
+          apiErrors = err.response.data;
+          if (typeof apiErrors === 'object' && apiErrors !== null) {
+              const firstErrorKey = Object.keys(apiErrors)[0];
+              if (Array.isArray(apiErrors[firstErrorKey])) {
+                  this.error = `${firstErrorKey}: ${apiErrors[firstErrorKey][0]}`;
+              } else {
+                  this.error = String(apiErrors[firstErrorKey] || apiErrors.detail || 'Ошибка входа.');
+              }
+          } else if (typeof apiErrors === 'string') {
+              this.error = apiErrors;
+          } else {
+               this.error = 'Ошибка входа. Проверьте email и пароль.';
+          }
         } else {
-            this.error = 'Ошибка входа. Проверьте email и пароль или попробуйте позже.';
+          this.error = 'Произошла сетевая ошибка.';
         }
         console.error('Login error:', err);
-        return false;
+        return { success: false, errors: apiErrors };
       } finally {
         this.loading = false;
       }
     },
 
-    async register(userData: any) {
+    async register(userData: any): Promise<{ success: boolean; errors?: Record<string, any> }> {
       this.loading = true;
       this.error = null;
+      let apiErrors: Record<string, any> | undefined = undefined;
+
       try {
         await axios.post(`${API_BASE_URL}/auth/users/`, userData);
-
-
-        console.log(`Registration successful for ${userData.email}. Attempting to login...`);
-
-        const loginSuccess = await this.login({ email: userData.email, password: userData.password });
-        if (!loginSuccess) {
-
-
-            console.warn(`Auto-login after registration failed for ${userData.email}. User might need to login manually.`);
-
-
-
-
-
-            return false;
+        const loginResult = await this.login({ email: userData.email, password: userData.password });
+        if (!loginResult.success) {
+          return { success: false, errors: loginResult.errors };
         }
-        return true;
+        return { success: true };
       } catch (err: any) {
-         let errorMessagesArray: string[] = [];
         if (axios.isAxiosError(err) && err.response) {
-            const errors = err.response.data;
-            if (typeof errors === 'object' && errors !== null) {
-                Object.values(errors).forEach(messagesForField => {
-                    if (Array.isArray(messagesForField)) {
-                        errorMessagesArray.push(...messagesForField.map(msg => String(msg)));
-                    } else {
-                        errorMessagesArray.push(String(messagesForField));
-                    }
-                });
-            } else if (typeof errors === 'string') {
-                errorMessagesArray.push(errors);
-            }
-        }
-        if (errorMessagesArray.length > 0) {
-            this.error = errorMessagesArray.join('; ');
+          apiErrors = err.response.data;
+          if (typeof apiErrors === 'object' && apiErrors !== null) {
+              const firstErrorKey = Object.keys(apiErrors)[0];
+               if (Array.isArray(apiErrors[firstErrorKey])) {
+                  this.error = `${firstErrorKey}: ${apiErrors[firstErrorKey][0]}`;
+              } else {
+                  this.error = String(apiErrors[firstErrorKey] || apiErrors.detail || 'Ошибка регистрации.');
+              }
+          } else if (typeof apiErrors === 'string') {
+              this.error = apiErrors;
+          } else {
+              this.error = 'Ошибка регистрации. Пожалуйста, проверьте введенные данные.';
+          }
         } else {
-            this.error = 'Ошибка регистрации. Пожалуйста, проверьте введенные данные.';
+          this.error = 'Произошла сетевая ошибка при регистрации.';
         }
         console.error('Registration error (during user creation POST):', err);
-        return false;
+        return { success: false, errors: apiErrors };
       } finally {
         this.loading = false;
       }

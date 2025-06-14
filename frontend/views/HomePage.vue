@@ -5,19 +5,21 @@
         <div class="md:w-1/2 text-center md:text-left mb-10 md:mb-0 md:pr-8">
           <h1 class="text-4xl md:text-5xl font-bold mb-4">Поиск животных</h1>
           <p class="text-lg mb-8">Найди или помоги другому найти своего любимца</p>
-          <div class="flex max-w-md mx-auto md:mx-0">
+          <form @submit.prevent="performSearch" class="flex max-w-md mx-auto md:mx-0">
             <input
               type="text"
+              v-model="searchQueryHomepage"
               placeholder="Поиск животных..."
-              class="flex-grow p-3 border border-gray-300 rounded-l-md focus:ring-green-500 focus:border-green-500"
+              class="flex-grow p-3 border border-gray-300 rounded-l-md focus:ring-green-500 focus:border-green-500 text-gray-800"
             />
             <button
+              type="submit"
               class="bg-green-500 text-white px-6 py-3 rounded-r-md hover:bg-green-600 flex items-center justify-center"
             >
               <font-awesome-icon :icon="['fas', 'search']" class="mr-2" />
               Поиск
             </button>
-          </div>
+          </form>
         </div>
         <div class="md:w-1/2 flex justify-center md:justify-end self-end">
           <img
@@ -266,6 +268,7 @@ import axios from 'axios'
 import AdCard from '../components/AdCard.vue'
 import ArticleGridCard from '../components/ArticleGridCard.vue'
 import { formatTimeAgo } from '../utils/time'
+import { useRouter } from 'vue-router'
 import type { ArticleCategory } from '../types'
 
 interface HomePageAd {
@@ -313,10 +316,24 @@ const loadingArticles = ref(true)
 const errorArticles = ref<string | null>(null)
 
 const topRegions = ref<TopRegion[]>([])
-const loadingRegions = ref(true) 
+const loadingRegions = ref(true)
 const errorRegions = ref<string | null>(null)
 
+const searchQueryHomepage = ref('')
+const router = useRouter()
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
+
+const performSearch = () => {
+  if (searchQueryHomepage.value.trim()) {
+    router.push({
+      name: 'Advertisements',
+      query: { search: searchQueryHomepage.value.trim() }, 
+    })
+  } else {
+    router.push({ name: 'Advertisements' })
+  }
+}
 
 const mainArticleForGridCard = computed((): ArticleForGridCard | undefined => {
   if (!mainArticle.value) return undefined
@@ -350,13 +367,13 @@ const fetchData = async () => {
       recent_ads: HomePageAd[]
       main_article: HomePageArticle | null
       side_articles: HomePageArticle[]
-      top_regions: TopRegion[] 
+      top_regions: TopRegion[]
     }>(`${API_BASE_URL}/homepage/`)
 
     recentAds.value = response.data.recent_ads || []
     mainArticle.value = response.data.main_article
     sideArticles.value = response.data.side_articles || []
-    topRegions.value = response.data.top_regions || [] 
+    topRegions.value = response.data.top_regions || []
   } catch (err) {
     const message = axios.isAxiosError(err)
       ? `Не удалось загрузить данные: ${err.message}.`
@@ -367,7 +384,7 @@ const fetchData = async () => {
   } finally {
     loadingAds.value = false
     loadingArticles.value = false
-    loadingRegions.value = false 
+    loadingRegions.value = false
   }
 }
 

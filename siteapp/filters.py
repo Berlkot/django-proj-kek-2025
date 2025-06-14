@@ -102,6 +102,6 @@ class AdvertisementFilter(django_filters.FilterSet):
             return queryset.filter(
                 Q(title__icontains=value)
                 | Q(description__icontains=value)
-                | Q(animal__name__contains=value)
+                | Q(animal__name__icontains=value)
             ).distinct()
         return queryset
