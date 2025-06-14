@@ -6,7 +6,7 @@ class IsOwnerOrAdminOrModeratorForComment(permissions.BasePermission):
     Разрешает чтение всем.
     Создание: проверяется отдельно во View (IsAuthenticated).
     Редактирование: только владелец (если у его роли есть право can_edit_own_comment).
-    Удаление: владелец (если can_delete_own_comment) ИЛИ пользователь с правом can_delete_any_comment (модератор) ИЛИ is_staff.
+    Удаление: владелец (если can_delete_own_comment) ИЛИ пользователь с правом can_delete_any_comment ИЛИ is_staff.
     """
 
     def has_object_permission(self, request, view, obj):

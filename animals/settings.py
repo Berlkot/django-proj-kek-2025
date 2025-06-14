@@ -202,7 +202,7 @@ DJOSER = {
     "PASSWORD_RESET_CONFIRM_RETYPE": True,
     "LOGOUT_ON_PASSWORD_CHANGE": True,
     "SERIALIZERS": {
-        "user_create": "siteapp.serializers.UserCreateSerializer",
+        "user_create_password_retype": "siteapp.serializers.UserCreateSerializer",
         "user": "siteapp.serializers.CurrentUserSerializer",
         "current_user": "siteapp.serializers.CurrentUserSerializer",
     },

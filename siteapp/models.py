@@ -6,6 +6,7 @@ from django.utils.html import format_html
 from django.utils import timezone
 from django.conf import settings
 from django.template.defaultfilters import slugify
+from django.core.validators import RegexValidator
 
 
 FRONTEND_BASE_URL = getattr(settings, "FRONTEND_BASE_URL", "http://localhost:5173")
@@ -73,8 +74,16 @@ class User(AbstractUser):
 
     display_name = models.CharField(_("отображаемое имя"), max_length=150, blank=True)
     email = models.EmailField(_("email"), unique=True)
+    phone_regex = RegexValidator(
+        regex=r'^\+?1?\d{9,15}$',
+        message=_("Номер телефона должен быть введен в формате: '+999999999'. До 15 цифр.")
+    )
     phone_number = models.CharField(
-        _("номер телефона"), max_length=20, blank=True, null=True
+        _("номер телефона"), 
+        validators=[phone_regex],
+        max_length=20, 
+        blank=True, 
+        null=True
     )
 
     role = models.ForeignKey(

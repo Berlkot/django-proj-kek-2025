@@ -19,6 +19,13 @@
 
     <form v-else @submit.prevent="handleSubmit" class="bg-white p-6 md:p-8 rounded-lg shadow-md space-y-6">
 
+      <div v-if="formErrors.non_field_errors" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4">
+        <p v-for="(error, index) in formErrors.non_field_errors" :key="`nonfield-${index}`">{{ error }}</p>
+      </div>
+      <div v-else-if="submitError" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4">
+        <p>{{ submitError }}</p>
+      </div>
+
       <fieldset class="border p-4 rounded-md">
         <legend class="text-lg font-semibold px-2 text-gray-700">Объявление</legend>
         <div>
@@ -106,6 +113,7 @@
           </div>
         </div>
       </fieldset>
+      <p v-if="formErrors.animal_data && formErrors.animal_data.length" class="error-text">{{ formErrors.animal_data.join(', ') }}</p>
 
 
       <fieldset class="border p-4 rounded-md mt-6">
@@ -397,12 +405,15 @@ const handleSubmit = async () => {
     }
     router.push({ name: 'AdvertisementDetail', params: { id: response.data.id } });
   } catch (err) {
+    submitError.value = null;
+    formErrors.value = {};
     if (axios.isAxiosError(err) && err.response) {
       if (err.response.status === 400 && typeof err.response.data === 'object') {
         formErrors.value = err.response.data;
-        submitError.value = "Пожалуйста, исправьте ошибки в форме.";
+      } else if (err.response.data?.detail) {
+        submitError.value = err.response.data.detail;
       } else {
-        submitError.value = err.response.data?.detail || `Произошла ошибка (${err.response.statusText || err.response.status}).`;
+        submitError.value = `Произошла ошибка (${err.response.statusText || err.response.status}).`;
       }
     } else {
       submitError.value = "Произошла неизвестная сетевая ошибка.";
