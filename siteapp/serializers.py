@@ -14,6 +14,7 @@ from .models import (
     ArticleCategory,
     Comment,
     Breed,
+    AdvertisementRating
 )
 from django.utils import timezone
 from dateutil.relativedelta import relativedelta
@@ -277,6 +278,9 @@ class AdvertisementListSerializer(serializers.ModelSerializer):
         format="%Y-%m-%dT%H:%M:%S.%fZ", read_only=True
     )
     short_description = serializers.SerializerMethodField()
+    comments_count = serializers.IntegerField(read_only=True, required=False)
+    average_rating = serializers.FloatField(read_only=True, required=False)
+    rating_count = serializers.IntegerField(read_only=True, required=False)
 
     class Meta:
         model = Advertisement
@@ -292,6 +296,9 @@ class AdvertisementListSerializer(serializers.ModelSerializer):
             "longitude",
             "first_photo_url",
             "location",
+            "comments_count",
+            "average_rating",
+            "rating_count"
         ]
 
     def get_first_photo_url(self, obj):
@@ -479,6 +486,10 @@ class AdvertisementDetailSerializer(serializers.ModelSerializer):
         format="%Y-%m-%dT%H:%M:%S.%fZ", read_only=True
     )
     location = serializers.SerializerMethodField()
+    
+    comments_count = serializers.IntegerField(read_only=True, required=False)
+    average_rating = serializers.FloatField(read_only=True, required=False)
+    rating_count = serializers.IntegerField(read_only=True, required=False)
 
     class Meta:
         model = Advertisement
@@ -495,6 +506,9 @@ class AdvertisementDetailSerializer(serializers.ModelSerializer):
             "photos",
             "responses",
             "location",
+            "comments_count",
+            "average_rating",
+            "rating_count",
         ]
 
     def get_location(self, obj):
@@ -811,3 +825,20 @@ class RegionActivitySerializer(serializers.Serializer):
     id = serializers.IntegerField(source='region__id')
     name = serializers.CharField(source='region__name')
     ad_count = serializers.IntegerField()
+
+
+class AdvertisementRatingSerializer(serializers.ModelSerializer):
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
+    class Meta:
+        model = AdvertisementRating
+        fields = ['id', 'advertisement', 'user', 'rating', 'created_at']
+        read_only_fields = ['id', 'created_at', 'user'] 
+
+    def validate(self, data):
+        if not self.instance:
+            request_user = self.context['request'].user
+            advertisement = data.get('advertisement')
+            if AdvertisementRating.objects.filter(advertisement=advertisement, user=request_user).exists():
+                raise serializers.ValidationError(_("Вы уже оставили оценку для этого объявления."))
+        return data

@@ -29,12 +29,73 @@
             </div>
           </div>
           <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-1">{{ ad.title }}</h1>
+          <div class="mb-3">
+            <div class="flex flex-col sm:flex-row sm:items-center">
+              <div class="flex items-center mb-3 sm:mb-0">
+                <div class="flex items-center space-x-1 mr-2">
+                  <button
+                    v-for="starValue in [1, 2, 3, 4, 5]"
+                    :key="`interactive-star-${starValue}`"
+                    @click="authStore.isAuthenticated ? setRating(starValue) : redirectToLogin()"
+                    @mouseover="hoverRating = starValue"
+                    @mouseleave="hoverRating = 0"
+                    class="p-0.5 text-gray-300 hover:text-amber-400 focus:outline-none disabled:cursor-not-allowed"
+                    :aria-label="`Поставить ${starValue} звезд`"
+                    :disabled="!authStore.isAuthenticated && !ad?.average_rating"
+                  >
+                    <font-awesome-icon 
+                      :icon="['fas', 'star']" 
+                      :class="getStarClass(starValue)"
+                      class="w-6 h-6 transition-colors" 
+                    />
+                  </button>
+                </div>
+                <div class="text-sm text-gray-600">
+                  <span v-if="ad.average_rating !== null && ad.average_rating !== undefined && ad.rating_count && ad.rating_count > 0">
+                    {{ ad.average_rating.toFixed(1) }} ({{ ad.rating_count }} {{getRatingCountText(ad.rating_count)}})
+                  </span>
+                  <span v-else-if="!authStore.isAuthenticated">
+                     <router-link :to="{name: 'Login', query: { next: route.fullPath }}" class="text-green-600 hover:underline">Войдите</router-link>, чтобы оценить
+                  </span>
+                  <span v-else-if="newRating === 0">
+                    Оцените первым!
+                  </span>
+                </div>
+              </div>
+
+              <div v-if="authStore.isAuthenticated && (newRating > 0 || currentUserRating)" class="ml-2 flex items-center space-x-2 mt-2 sm:mt-0">
+                <button
+                  v-if="newRating > 0"
+                  @click="submitOrUpdateRating"
+                  :disabled="ratingSubmitting"
+                  class="bg-green-500 hover:bg-green-600 text-white text-xs px-3 py-1.5 rounded-md disabled:opacity-50"
+                >
+                  {{ ratingSubmitting ? 'Сохранение...' : (currentUserRating && currentUserRating.rating === newRating ? 'Оценка сохранена' : (currentUserRating ? 'Обновить' : 'Отправить')) }}
+                </button>
+                <button
+                  v-if="currentUserRating && newRating === 0"
+                  @click="deleteRating"
+                  :disabled="ratingSubmitting"
+                  class="text-red-500 hover:text-red-700 text-xs hover:bg-red-50 px-2 py-1 rounded-md disabled:opacity-50"
+                >
+                  Удалить оценку
+                </button>
+                 <button
+                  v-if="newRating > 0 && currentUserRating && currentUserRating.rating !== newRating"
+                  @click="cancelNewRating"
+                  :disabled="ratingSubmitting"
+                  class="text-gray-500 hover:text-gray-700 text-xs hover:bg-gray-100 px-2 py-1 rounded-md"
+                >
+                  Отменить
+                </button>
+              </div>
+            </div>
+            <p v-if="ratingError" class="text-red-500 text-xs mt-1 sm:text-right">{{ ratingError }}</p>
+          </div>
           <div class="text-xs text-gray-500 flex items-center space-x-3">
             <span>Опубликовано: {{ formatTimeAgo(ad.publication_date) }}</span>
             <span v-if="ad.status" class="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs">{{ ad.status
               }}</span>
-
-
           </div>
         </div>
       </div>
@@ -260,30 +321,32 @@ import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import ImageGallery from '../components/ImageGallery.vue'
 import { formatTimeAgo, formatDate } from '../utils/time'
-import type { AdvertisementDetail, AdResponse, AdAuthor } from '../types'
+import type { AdvertisementDetail, AdResponse, AdAuthor, AdvertisementRating } from '../types'
 import { useAuthStore } from '../stores/auth'
-const props = defineProps<{
-  id: string | number
-}>()
 
-const ad = ref<AdvertisementDetail | null>(null)
-const loading = ref(true)
-const error = ref<string | null>(null)
-const activeTab = ref('description')
+const props = defineProps<{ id: string | number; }>();
+const ad = ref<AdvertisementDetail | null>(null);
+const loading = ref(true);
+const error = ref<string | null>(null);
+const activeTab = ref('description');
+const authStore = useAuthStore();
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+const route = useRoute();
+const router = useRouter()
+
+const currentUserRating = ref<AdvertisementRating | null>(null);
+const newRating = ref(0);
+const hoverRating = ref(0);
+const ratingSubmitting = ref(false);
+const ratingError = ref<string | null>(null);
 
 const newCommentMessage = ref('')
 const commentSubmitting = ref(false)
 const commentError = ref<string | null>(null)
 
-// Для редактирования комментария
 const editingCommentId = ref<number | null>(null)
 const editingCommentText = ref('')
 const editCommentError = ref<string | null>(null)
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
-const route = useRoute()
-const router = useRouter()
-const authStore = useAuthStore()
 
 const tabs = [
   { name: 'description', label: 'Описание' },
@@ -300,24 +363,20 @@ const canEditCurrentAd = computed(() => {
 
 
 const fetchAdDetail = async (adId: string | number) => {
-
-  loading.value = true
-  error.value = null
-  ad.value = null
+  loading.value = true; error.value = null; ad.value = null; currentUserRating.value = null; newRating.value = 0;
   try {
-    const response = await axios.get<AdvertisementDetail>(`${API_BASE_URL}/advertisements/${adId}/`)
-    ad.value = response.data
+    const response = await axios.get<AdvertisementDetail>(`${API_BASE_URL}/advertisements/${adId}/`);
+    ad.value = response.data;
+    if (ad.value && !ad.value.responses) ad.value.responses = [];
+    
+    if (authStore.isAuthenticated && authStore.user && ad.value) {
+        await fetchCurrentUserRating(ad.value.id);
+    }
   } catch (err) {
-    console.error(`Ошибка загрузки объявления ${adId}:`, err)
-    error.value = axios.isAxiosError(err)
-      ? err.response?.status === 404
-        ? 'Объявление не найдено.'
-        : `Ошибка: ${err.message}`
-      : 'Неизвестная ошибка'
-  } finally {
-    loading.value = false
-  }
-}
+    console.error(`Ошибка загрузки объявления ${adId}:`, err);
+    error.value = axios.isAxiosError(err) ? (err.response?.status === 404 ? "Объявление не найдено." : `Ошибка: ${err.message}`) : "Неизвестная ошибка";
+  } finally { loading.value = false; }
+};
 
 const submitComment = async () => {
   if (!newCommentMessage.value.trim() || !ad.value || !authStore.isAuthenticated) return
@@ -401,20 +460,122 @@ const deleteComment = async (commentId: number) => {
   }
 }
 
-onMounted(() => {
-  fetchAdDetail(props.id)
-})
-
-watch(
-  () => props.id,
-  (newId) => {
-    if (newId) {
-      fetchAdDetail(newId)
-      activeTab.value = 'description'
-      cancelEditComment()
+const fetchCurrentUserRating = async (advertisementId: number) => {
+    if (!authStore.user) return;
+    try {
+        const response = await axios.get<AdvertisementRating[]>(`${API_BASE_URL}/advertisement-ratings/`, {
+            params: {
+                advertisement_id: advertisementId,
+                user_id: authStore.user.id
+            }
+        });
+        if (response.data && response.data.length > 0) {
+            currentUserRating.value = response.data[0];
+            newRating.value = 0; 
+        } else {
+            currentUserRating.value = null;
+        }   
+    } catch (err) {
+        console.error("Ошибка загрузки оценки пользователя:", err);
+        currentUserRating.value = null; 
     }
-  },
-)
+};
+
+const getStarClass = (starValue: number): string => {
+  if (newRating.value > 0) {
+    return hoverRating.value >= starValue || newRating.value >= starValue ? 'text-amber-400' : 'text-gray-300';
+  }
+  if (currentUserRating.value) {
+    return hoverRating.value >= starValue || currentUserRating.value.rating >= starValue ? 'text-amber-400' : 'text-gray-300';
+  }
+  if (ad.value && ad.value.average_rating !== null && ad.value.average_rating !== undefined) {
+    return hoverRating.value >= starValue || starValue <= Math.round(ad.value.average_rating) ? 'text-amber-400' : 'text-gray-300';
+  }
+  return hoverRating.value >= starValue ? 'text-amber-400' : 'text-gray-300';
+};
+
+const setRating = (value: number) => {
+  if (!authStore.isAuthenticated) {
+    redirectToLogin();
+    return;
+  }
+  newRating.value = value;
+  ratingError.value = null;
+};
+
+const cancelNewRating = () => {
+    newRating.value = 0;
+    ratingError.value = null;
+};
+
+const submitOrUpdateRating = async () => {
+  if (newRating.value === 0 || !ad.value || !authStore.isAuthenticated) return;
+  ratingSubmitting.value = true;
+  ratingError.value = null;
+  
+  const payload = {
+    advertisement: ad.value.id, 
+    rating: newRating.value,
+  };
+
+  try {
+    let response;
+    if (currentUserRating.value) {
+      response = await axios.patch<AdvertisementRating>(`${API_BASE_URL}/advertisement-ratings/${currentUserRating.value.id}/`, payload);
+    } else { 
+      response = await axios.post<AdvertisementRating>(`${API_BASE_URL}/advertisement-ratings/`, payload);
+    }
+    await fetchAdDetail(props.id); 
+  } catch (err) {
+    ratingError.value = axios.isAxiosError(err) ? `Ошибка: ${err.response?.data?.detail || err.response?.data?.rating || err.message}` : "Не удалось сохранить оценку.";
+    console.error("Rating submission error:", err);
+  } finally {
+    ratingSubmitting.value = false;
+  }
+};
+
+const deleteRating = async () => {
+    if (!currentUserRating.value || !authStore.isAuthenticated) return;
+    if (!confirm("Удалить вашу оценку?")) return;
+
+    ratingSubmitting.value = true;
+    ratingError.value = null;
+    try {
+        await axios.delete(`${API_BASE_URL}/advertisement-ratings/${currentUserRating.value.id}/`);
+        currentUserRating.value = null;
+        newRating.value = 0;
+        await fetchAdDetail(props.id); 
+    } catch (err) {
+        ratingError.value = axios.isAxiosError(err) ? `Ошибка: ${err.response?.data?.detail || err.message}` : "Не удалось удалить оценку.";
+        console.error("Rating deletion error:", err);
+    } finally {
+        ratingSubmitting.value = false;
+    }
+};
+
+const getRatingCountText = (count: number): string => {
+    const cases = [2, 0, 1, 1, 1, 2];
+    const titles = ['оценка', 'оценки', 'оценок'];
+    return titles[(count % 100 > 4 && count % 100 < 20) ? 2 : cases[Math.min(count % 10, 5)]];
+};
+
+const redirectToLogin = () => {
+    router.push({ name: 'Login', query: { next: route.fullPath } });
+};
+
+onMounted(() => {
+  fetchAdDetail(props.id);
+});
+
+watch(() => props.id, (newId) => {
+  if (newId) {
+    fetchAdDetail(newId);
+    activeTab.value = 'description';
+    currentUserRating.value = null;
+    newRating.value = 0;
+    ratingError.value = null;
+  }
+});
 </script>
 
 <style scoped>

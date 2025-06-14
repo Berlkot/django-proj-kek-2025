@@ -35,12 +35,13 @@ export interface AgeCategory {
 }
 
 export interface FilterOptions {
-  regions: Region[]
-  species: Species[]
-  ad_statuses: AdStatus[]
-  colors: AnimalColor[]
-  genders: GenderOption[]
-  age_categories: AgeCategory[]
+  regions: Region[];
+  species: Species[];
+  ad_statuses: AdStatus[];
+  colors: AnimalColor[];
+  genders: GenderOption[];
+  age_categories: AgeCategory[];
+  breeds: Breed[];
 }
 
 export interface AdAnimal {
@@ -80,12 +81,15 @@ export interface PaginatedAdvertisementsResponse {
 }
 
 export interface SelectedFilters {
-  region: number | null
-  age_category: string | null
-  ad_status: number | null
-  species: number | null
-  color: number | null
-  gender: string | null
+  region: number | null;
+  age_category: string | null;
+  ad_status: number | null;
+  species: number | null;
+  breed: number | null;
+  color: number | null;
+  gender: string | null;
+  publication_date_after: string | null; 
+  publication_date_before: string | null;
 }
 export interface AdAuthor {
   id: number
@@ -201,4 +205,17 @@ export interface AdvertisementFormData {
 
   photos_upload?: File[]
   existing_photo_ids?: number[]
+}
+
+export interface Breed {
+  id: number;
+  name: string;
+  species_id: number; 
+}
+
+export interface AdvertisementRating {
+  id: number;
+  user_id: number;
+  advertisement_id: number;
+  rating: number;
 }
