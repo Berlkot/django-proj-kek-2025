@@ -165,3 +165,23 @@ class CanManageAdvertisements(permissions.BasePermission):
                 return True
 
         return False
+
+
+class IsOwnerOrAdminOrReadOnly(permissions.BasePermission):
+    """
+    Разрешает чтение всем (GET, HEAD, OPTIONS).
+    Разрешает создание, если пользователь аутентифицирован (проверяется отдельно во ViewSet для create).
+    Разрешает редактирование (PUT, PATCH) и удаление (DELETE) только владельцу объекта или администратору (is_staff).
+    """
+
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return request.user and request.user.is_authenticated
+
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        if hasattr(obj, 'user'):
+            return obj.user == request.user or request.user.is_staff
+        return request.user.is_staff

@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.conf import settings
 from django.template.defaultfilters import slugify
 from django.core.validators import RegexValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 
 
 FRONTEND_BASE_URL = getattr(settings, "FRONTEND_BASE_URL", "http://localhost:5173")
@@ -352,6 +353,33 @@ class Advertisement(models.Model):
 
         return f"{FRONTEND_BASE_URL}advertisement/{self.pk}"
 
+class AdvertisementRating(models.Model):
+    advertisement = models.ForeignKey(
+        Advertisement, 
+        related_name='ratings', 
+        on_delete=models.CASCADE,
+        verbose_name=_("объявление")
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name='ad_ratings_given',
+        on_delete=models.CASCADE,
+        verbose_name=_("пользователь")
+    )
+    rating = models.PositiveSmallIntegerField(
+        _("оценка"),
+        validators=[MinValueValidator(1), MaxValueValidator(5)]
+    )
+    created_at = models.DateTimeField(_("дата оценки"), auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("оценка объявления")
+        verbose_name_plural = _("оценки объявлений")
+        unique_together = ('advertisement', 'user')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.rating}* от {self.user.username} для {self.advertisement.title[:20]}..."
 
 class AdPhoto(models.Model):
     advertisement = models.ForeignKey(

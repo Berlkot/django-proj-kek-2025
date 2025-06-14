@@ -110,7 +110,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed, nextTick } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 import AdCard from '../components/AdCard.vue';
@@ -118,7 +118,7 @@ import FilterSidebar from '../components/FilterSidebar.vue';
 import MobileFilterModal from '../components/MobileFilterModal.vue';
 import { formatTimeAgo } from '../utils/time';
 import { useAuthStore } from '../stores/auth';
-import type { Advertisement, PaginatedAdvertisementsResponse, FilterOptions, SelectedFilters } from '../types';
+import type { Advertisement, PaginatedAdvertisementsResponse, FilterOptions, SelectedFilters, Breed } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
 
@@ -132,11 +132,14 @@ const itemsPerPage = 12;
 const authStore = useAuthStore();
 
 const filterOptions = ref<FilterOptions>({
-  regions: [], species: [], ad_statuses: [], colors: [], genders: [], age_categories: [],
+  regions: [], species: [], ad_statuses: [], colors: [],
+  genders: [], age_categories: [], breeds: [],
 });
 
 const defaultFilters: SelectedFilters = {
-  region: null, age_category: null, ad_status: null, species: null, color: null, gender: null,
+  region: null, age_category: null, ad_status: null,
+  species: null, breed: null, color: null, gender: null,
+  publication_date_after: null, publication_date_before: null,
 };
 const selectedFilters = ref<SelectedFilters>({ ...defaultFilters });
 
@@ -161,13 +164,6 @@ const fetchFilterOptions = async () => {
 };
 
 const fetchAdvertisements = async () => {
-  if (!initialLoadDone && !Object.keys(route.query).length && currentPage.value === 1 && currentSearchQuery.value === '' && currentOrdering.value === '-publication_date' && JSON.stringify(selectedFilters.value) === JSON.stringify(defaultFilters)) {
-
-
-
-
-  }
-
   loadingAds.value = true;
   errorAds.value = null;
   try {
@@ -192,7 +188,6 @@ const fetchAdvertisements = async () => {
     totalPages.value = Math.ceil(response.data.count / itemsPerPage);
     initialLoadDone = true;
   } catch (err) {
-    console.error("Ошибка загрузки объявлений:", err);
     errorAds.value = axios.isAxiosError(err) ? `Ошибка: ${err.message}` : "Неизвестная ошибка";
     initialLoadDone = true;
   } finally {
@@ -204,64 +199,50 @@ const fetchAdvertisements = async () => {
 const updateRouteQuery = () => {
   const query: Record<string, string | number> = {};
 
-
   if (currentPage.value > 1) query.page = currentPage.value;
   if (currentSearchQuery.value) query.search = currentSearchQuery.value;
   if (currentOrdering.value !== '-publication_date') query.ordering = currentOrdering.value;
 
   for (const key in selectedFilters.value) {
     const filterKey = key as keyof SelectedFilters;
-    if (selectedFilters.value[filterKey] !== null && selectedFilters.value[filterKey] !== '') {
-      query[filterKey] = String(selectedFilters.value[filterKey]);
+    const filterValue = selectedFilters.value[filterKey];
+    if (filterValue !== null && filterValue !== '') {
+      query[filterKey] = String(filterValue);
     }
   }
-
-  router.push({ query });
+  router.replace({ query });
 };
-
-
 
 const applySearch = () => {
   currentSearchQuery.value = searchQueryInput.value;
   currentPage.value = 1;
-  updateRouteQuery();
+  updateRouteQuery(); 
 };
 
 const applySorting = () => {
-
   currentPage.value = 1;
   updateRouteQuery();
 };
 
-const handleApplyFilters = (filtersFromChild: SelectedFilters) => {
-
-
-  selectedFilters.value = { ...filtersFromChild };
-
-
+const handleApplyFilters = (newFilterValues: SelectedFilters) => {
+  selectedFilters.value = { ...newFilterValues };
+  currentPage.value = 1;
+  updateRouteQuery();
 };
 
 const handleApplyFiltersFromModal = (filtersFromModal: SelectedFilters) => {
-  selectedFilters.value = { ...filtersFromModal };
-
-
+  handleApplyFilters(filtersFromModal);
+  isMobileFilterOpen.value = false;
 };
 
 const handleResetFilters = () => {
-
-
-
-
-
-
-
-
   searchQueryInput.value = '';
-
   currentPage.value = 1;
   currentSearchQuery.value = '';
   currentOrdering.value = '-publication_date';
   selectedFilters.value = { ...defaultFilters };
+  updateRouteQuery();
+  isMobileFilterOpen.value = false;
 };
 
 const changePage = (page: number | string) => {
@@ -270,15 +251,10 @@ const changePage = (page: number | string) => {
   updateRouteQuery();
 };
 
-
-let isUpdatingFromUrl = false;
-
 watch(
   () => route.query,
   async (newQuery) => {
-    isUpdatingFromUrl = true;
-
-    const newPage = newQuery.page ? parseInt(newQuery.page as string) : 1;
+    const newPage = newQuery.page ? parseInt(newQuery.page as string, 10) : 1;
     const newSearch = (newQuery.search as string) || '';
     const newOrdering = (newQuery.ordering as string) || '-publication_date';
 
@@ -287,7 +263,7 @@ watch(
       const filterKey = key as keyof SelectedFilters;
       const queryValue = newQuery[filterKey] as string | undefined;
       if (queryValue !== undefined && queryValue !== null && queryValue !== '') {
-        if (filterKey === 'age_category' || filterKey === 'gender') {
+        if (filterKey === 'age_category' || filterKey === 'gender' || filterKey === 'publication_date_after' || filterKey === 'publication_date_before') {
           newFiltersStateFromQuery[filterKey] = queryValue;
         } else {
           const numValue = parseInt(queryValue, 10);
@@ -297,44 +273,46 @@ watch(
         newFiltersStateFromQuery[filterKey] = null;
       }
     }
+    
+    if (currentPage.value !== newPage) currentPage.value = newPage;
+    if (currentSearchQuery.value !== newSearch) currentSearchQuery.value = newSearch;
+    if (searchQueryInput.value !== newSearch) searchQueryInput.value = newSearch;
+    if (currentOrdering.value !== newOrdering) currentOrdering.value = newOrdering;
+    if (JSON.stringify(selectedFilters.value) !== JSON.stringify(newFiltersStateFromQuery)) {
+        selectedFilters.value = newFiltersStateFromQuery;
+    }
+    
 
-
-    currentPage.value = newPage;
-    currentSearchQuery.value = newSearch;
-    searchQueryInput.value = newSearch;
-    currentOrdering.value = newOrdering;
-    selectedFilters.value = newFiltersStateFromQuery;
-
-
-
-    await fetchAdvertisements();
-
-
-
-    await nextTick();
-    isUpdatingFromUrl = false;
+    if (initialLoadDone || Object.keys(newQuery).length > 0) {
+        await fetchAdvertisements();
+    } else if (!initialLoadDone && Object.keys(newQuery).length === 0) {
+        await fetchAdvertisements();
+    }
   },
-  { deep: true, immediate: true }
+  { deep: true, immediate: true } 
 );
-
-watch(selectedFilters, (newSelectedFilters, oldSelectedFilters) => {
-  if (isUpdatingFromUrl) {
-
-
-    return;
-  }
-
-
-
-  if (JSON.stringify(newSelectedFilters) !== JSON.stringify(oldSelectedFilters)) {
-    currentPage.value = 1;
-    updateRouteQuery();
-  }
-}, { deep: true });
 
 
 onMounted(async () => {
   await fetchFilterOptions();
+});
+
+const availableBreedsForFilter = computed(() => { 
+    if (!selectedFilters.value.species || !filterOptions.value.breeds.length) {
+        return [];
+    }
+    return filterOptions.value.breeds.filter(b => b.species_id === selectedFilters.value.species);
+});
+
+watch(() => selectedFilters.value.species, (newSpeciesId, oldSpeciesId) => {
+    if (newSpeciesId !== oldSpeciesId && selectedFilters.value.breed !== null) {
+        const currentBreedIsValidForNewSpecies = availableBreedsForFilter.value.some(
+            (breed) => breed.id === selectedFilters.value.breed
+        );
+        if (!currentBreedIsValidForNewSpecies) {
+            selectedFilters.value.breed = null;
+        }
+    }
 });
 
 const paginationNumbers = computed(() => {
@@ -379,7 +357,6 @@ const paginationNumbers = computed(() => {
 });
 
 
-// Добавление иконки filter
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { faFilter } from '@fortawesome/free-solid-svg-icons';
 library.add(faFilter);

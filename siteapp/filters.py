@@ -1,7 +1,7 @@
 import django_filters
 from django.utils import timezone
 from dateutil.relativedelta import relativedelta
-from .models import Advertisement, Animal, Region, AdStatus, Species, AnimalColor
+from .models import Advertisement, Animal, Region, AdStatus, Species, AnimalColor, Breed
 from django.db.models import Q
 
 
@@ -43,16 +43,28 @@ class AdvertisementFilter(django_filters.FilterSet):
 
     search = django_filters.CharFilter(method="global_search", label="Поиск")
 
+    breed = django_filters.ModelChoiceFilter(
+        field_name='animal__breed', 
+        queryset=Breed.objects.all(),
+        label='Порода'
+    )
+
+    publication_date_after = django_filters.DateFilter(
+        field_name='publication_date',
+        lookup_expr='date__gte',
+        label='Опубликовано после (YYYY-MM-DD)'
+    )
+    publication_date_before = django_filters.DateFilter(
+        field_name='publication_date',
+        lookup_expr='date__lte',
+        label='Опубликовано до (YYYY-MM-DD)'
+    )
+
     class Meta:
         model = Advertisement
         fields = [
-            "region",
-            "ad_status",
-            "species",
-            "gender",
-            "color",
-            "age_category",
-            "search",
+            'region', 'ad_status', 'species', 'breed', 'gender', 'color', 
+            'age_category', 'search', 'publication_date_after', 'publication_date_before'
         ]
 
     def filter_by_age_category(self, queryset, name, value):

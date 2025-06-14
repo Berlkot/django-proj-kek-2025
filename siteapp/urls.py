@@ -13,10 +13,12 @@ from .views_api import (
     ArticleCommentRetrieveUpdateDestroyAPIView,
     AdvertisementViewSet,
     BreedListAPIView,
+    AdvertisementRatingViewSet 
 )
 
 router = DefaultRouter()
 router.register(r"advertisements", AdvertisementViewSet, basename="advertisement")
+router.register(r'advertisement-ratings', AdvertisementRatingViewSet, basename='advertisement-rating')
 
 urlpatterns = [
     path("", include(router.urls)),

@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status, generics, filters, permissions, viewsets, parsers
 from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Count
+from django.db.models import Count, Avg
 
 
 from .models import (
@@ -18,6 +18,7 @@ from .models import (
     Comment,
     Breed,
     Animal,
+    AdvertisementRating
 )
 from .serializers import (
     HomePageAdSerializer,
@@ -36,7 +37,8 @@ from .serializers import (
     CommentSerializer,
     AdvertisementManageSerializer,
     BreedSerializer,
-    RegionActivitySerializer
+    RegionActivitySerializer,
+    AdvertisementRatingSerializer
 )
 
 from .filters import AdvertisementFilter, AGE_CHOICES
@@ -44,6 +46,7 @@ from .permissions import (
     IsOwnerOrAdminOrModeratorForComment,
     CanManageArticles,
     CanManageAdvertisements,
+    IsOwnerOrAdminOrReadOnly 
 )
 
 
@@ -83,22 +86,13 @@ class HomePageDataAPIView(APIView):
 
         serializer_context = {"request": request}
 
-        top_n_regions = 5 # Сколько регионов показывать
+        top_n_regions = 5
         try:
-            # Получаем ID активного статуса
             active_status = AdStatus.objects.get(name="Активно")
-            # Аннотируем регионы количеством активных объявлений
-            # Фильтруем объявления по статусу "Активно" и чтобы у пользователя был указан регион
-            # Группируем по user__region и считаем количество объявлений (ad_count)
-            # Затем сортируем по убыванию ad_count
-            # distinct=True для Count, чтобы избежать двойного подсчета, если есть другие join'ы (здесь не критично, но хорошая практика)
             region_activity = Advertisement.objects.filter(status=active_status, user__region__isnull=False) \
                 .values('user__region__id', 'user__region__name') \
                 .annotate(ad_count=Count('id', distinct=True)) \
                 .order_by('-ad_count')[:top_n_regions]
-            
-            # Преобразуем queryset values в формат, ожидаемый сериализатором
-            # (source='region__id' и 'region__name' в сериализаторе ожидают ключи 'region__id' и 'region__name')
             top_regions_data = [{'region__id': r['user__region__id'], 'region__name': r['user__region__name'], 'ad_count': r['ad_count']} for r in region_activity]
 
         except AdStatus.DoesNotExist:
@@ -208,6 +202,7 @@ class FilterOptionsAPIView(APIView):
             "age_categories": [
                 {"value": choice[0], "label": choice[1]} for choice in AGE_CHOICES
             ],
+            'breeds': BreedSerializer(Breed.objects.select_related('species').order_by('name'), many=True).data,
         }
         return Response(data, status=status.HTTP_200_OK)
 
@@ -356,6 +351,24 @@ class AdvertisementViewSet(viewsets.ModelViewSet):
     pagination_class = AdsPageNumberPagination
     permission_classes = [CanManageAdvertisements]
     parser_classes = [parsers.MultiPartParser, parsers.FormParser, parsers.JSONParser]
+    
+    def get_queryset(self):
+        queryset = Advertisement.objects.annotate(
+            comments_count=Count('responses', distinct=True),
+            average_rating=Avg('ratings__rating'),
+            rating_count=Count('ratings', distinct=True)
+        ).select_related(
+            'animal__species', 'animal__breed', 'animal__color',
+            'user__region', 'user__role', 'status'
+        ).prefetch_related(
+            'photos', 
+        ).order_by('-publication_date')
+
+        if self.action == 'retrieve':
+            queryset = queryset.prefetch_related('responses__user__role')
+        
+        return queryset
+
 
     def get_serializer_class(self):
         if self.action in ["create", "update", "partial_update"]:
@@ -370,3 +383,28 @@ class BreedListAPIView(generics.ListAPIView):
     serializer_class = BreedSerializer
 
     permission_classes = [permissions.AllowAny]
+    
+class AdvertisementRatingViewSet(viewsets.ModelViewSet):
+    queryset = AdvertisementRating.objects.select_related('user', 'advertisement').all()
+    serializer_class = AdvertisementRatingSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['advertisement', 'user']
+    pagination_class = None
+
+    def perform_create(self, serializer):
+        advertisement_id = serializer.validated_data.get('advertisement').id
+        if AdvertisementRating.objects.filter(advertisement_id=advertisement_id, user=self.request.user).exists():
+             pass 
+        serializer.save(user=self.request.user)
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            permission_classes = [permissions.AllowAny]
+        elif self.action == 'create':
+            permission_classes = [permissions.IsAuthenticated]
+        elif self.action in ['update', 'partial_update', 'destroy']:
+            permission_classes = [IsOwnerOrAdminOrReadOnly]
+        else:
+            permission_classes = [permissions.IsAdminUser]
+        return [permission() for permission in permission_classes]

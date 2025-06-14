@@ -24,6 +24,7 @@ from .models import (
     Volunteering,
     ArticleCategory,
     AnimalColor,
+    AdvertisementRating 
 )
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
@@ -560,6 +561,20 @@ class AdvertisementAdmin(admin.ModelAdmin):
 
         return obj.user.region.name if obj.user.region else _("Не указан")
 
+@admin.register(AdvertisementRating)
+class AdvertisementRatingAdmin(admin.ModelAdmin):
+    list_display = ('advertisement_title', 'user_email', 'rating', 'created_at')
+    list_filter = ('rating', 'created_at')
+    search_fields = ('advertisement__title', 'user__email', 'user__username')
+    raw_id_fields = ('advertisement', 'user')
+
+    @admin.display(description="Объявление", ordering='advertisement__title')
+    def advertisement_title(self, obj):
+        return obj.advertisement.title
+
+    @admin.display(description="Email пользователя", ordering='user__email')
+    def user_email(self, obj):
+        return obj.user.email
 
 @admin.register(AdPhoto)
 class AdPhotoAdmin(admin.ModelAdmin):

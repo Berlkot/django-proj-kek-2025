@@ -29,7 +29,8 @@ import {
   faFilter,
   faPencilAlt,
   faTrashAlt,
-  faHeart
+  faHeart,
+  faStar
 } from '@fortawesome/free-solid-svg-icons'
 import { faTelegram, faVk, faWhatsapp, faOdnoklassniki } from '@fortawesome/free-brands-svg-icons'
 
@@ -56,7 +57,8 @@ library.add(
   faOdnoklassniki,
   faPencilAlt,
   faTrashAlt,
-  faHeart
+  faHeart,
+  faStar
 )
 const app = createApp(App)
 
