@@ -45,7 +45,7 @@ const props = defineProps<{
 const currentIndex = ref(0);
 
 const currentPhotoUrl = computed(() => {
-  return props.photos && props.photos.length > 0 ? props.photos[currentIndex.value]?.image_url : '/images/no-image-data.png';
+  return props.photos && props.photos.length > 0 ? props.photos[currentIndex.value]?.image_url : '/static/images/no-image-data.png';
 });
 
 const nextPhoto = () => {

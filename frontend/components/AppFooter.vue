@@ -5,7 +5,7 @@
         <div>
           <a href="/" class="flex items-center mb-4">
 
-            <img src="/logo.svg" alt="СпасиЗверя" class="h-8 mr-2 filter invert brightness-0">
+            <img src="/static/logo.svg" alt="СпасиЗверя" class="h-8 mr-2 filter invert brightness-0">
             <span class="text-xl font-bold text-white">СпасиЗверя</span>
           </a>
           <p class="text-sm">© {{ new Date().getFullYear() }} СПАСИЗВЕРЯ. ВСЕ ПРАВА ЗАЩИЩЕНЫ.</p>

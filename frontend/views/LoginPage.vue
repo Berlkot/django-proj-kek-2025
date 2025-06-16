@@ -2,7 +2,7 @@
   <div class="min-h-screen flex items-center justify-center bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full space-y-8 bg-white p-8 md:p-10 rounded-xl shadow-lg">
       <div>
-        <img class="mx-auto h-12 w-auto" src="/logo.svg" alt="СпасиЗверя">
+        <img class="mx-auto h-12 w-auto" src="/static/logo.svg" alt="СпасиЗверя">
         <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
           Вход в аккаунт
         </h2>
@@ -82,10 +82,11 @@
           <font-awesome-icon :icon="['fab', 'google']" class="h-5 w-5 mr-2"/>
           Войти через Google
         </button>
-        <button @click="redirectToProvider('vk-oauth2')" class="w-full flex items-center justify-center py-2 px-4 border border-blue-600 rounded-md shadow-sm bg-blue-600 text-sm font-medium text-white hover:bg-blue-700">
+        <!-- пошёл нахер vk -->
+        <!-- <button @click="redirectToProvider('vk-oauth2')" class="w-full flex items-center justify-center py-2 px-4 border border-blue-600 rounded-md shadow-sm bg-blue-600 text-sm font-medium text-white hover:bg-blue-700">
           <font-awesome-icon :icon="['fab', 'vk']" class="mr-2 text-lg" />
           Войти через ВКонтакте
-        </button>
+          </button> -->
       </div>
 
       <p class="mt-4 text-center text-sm text-gray-600">
@@ -112,10 +113,10 @@ const route = useRoute();
 // Локальное состояние для ошибок полей и общих ошибок
 const formErrors = ref<Record<string, string[]>>({}); 
 const generalError = ref<string | null>(null);
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
 
 const redirectToProvider = (provider: 'google-oauth2' | 'vk-oauth2') => {
-     window.location.href = `${API_BASE_URL}/api/social/login/${provider}/`;
+     window.location.href = `${API_BASE_URL}/social/login/${provider}/`;
 }
 
 const handleLogin = async () => {

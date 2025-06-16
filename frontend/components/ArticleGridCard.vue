@@ -4,7 +4,7 @@
     class="group bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col h-full">
 
     <div class="relative overflow-hidden rounded-t-lg">
-      <img :src="article.main_image_url || '/images/no-image-data.png'" :alt="article.title"
+      <img :src="article.main_image_url || '/static/images/no-image-data.png'" :alt="article.title"
         class="w-full object-cover transition-opacity duration-300" :class="[
           large ? 'h-64 sm:h-72 md:h-80 lg:h-96' : 'h-48',
           'group-hover:opacity-80'

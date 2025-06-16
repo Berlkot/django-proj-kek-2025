@@ -23,7 +23,7 @@
         </div>
         <div class="md:w-1/2 flex justify-center md:justify-end self-end">
           <img
-            src="/images/hero-pets.png"
+            src="/static/images/hero-pets.png"
             alt="Собака и кошка"
             class="max-w-full h-auto md:max-w-lg lg:max-w-xl"
           />
@@ -217,7 +217,7 @@
           </div>
           <div class="w-full lg:w-1/2">
             <img
-              src="/images/map-placeholder.png"
+              src="/static/images/map-placeholder.png"
               alt="Карта приютов"
               class="w-full rounded-lg shadow-md max-h-[300px] md:max-h-[400px] object-cover"
             />
@@ -232,28 +232,28 @@
           class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 md:gap-8 items-center justify-items-center"
         >
           <img
-            src="/images/partners/purina.png"
+            src="/static/images/partners/purina.png"
             alt="Purina"
             class="h-10 md:h-12 opacity-70 hover:opacity-100 transition-opacity"
           />
           <img
-            src="/images/partners/birulevo.png"
+            src="/static/images/partners/birulevo.png"
             alt="Приют Бирюлево"
             class="h-10 md:h-12 opacity-70 hover:opacity-100 transition-opacity"
           />
           <img
-            src="/images/partners/drug-sobaka.png"
+            src="/static/images/partners/drug-sobaka.png"
             alt="Drug Sobaka"
             class="h-10 md:h-12 opacity-70 hover:opacity-100 transition-opacity"
           />
           <img
-            src="/images/partners/drug-dlya-druga.png"
+            src="/static/images/partners/drug-dlya-druga.png"
             alt="Друг для друга"
             class="h-10 md:h-12 opacity-70 hover:opacity-100 transition-opacity"
           />
 
           <img
-            src="/images/partners/iskra.png"
+            src="/static/images/partners/iskra.png"
             alt="Искра"
             class="h-10 md:h-12 opacity-70 hover:opacity-100 transition-opacity col-span-2 sm:col-span-1"
           />

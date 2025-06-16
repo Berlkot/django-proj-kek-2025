@@ -25,17 +25,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-gx(z)-g!w_u&*wvwtbxg5$rfmp%v&#0xc3jyqk*a9*63h)g@00"
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DJANGO_DEBUG', 'true').lower() == 'true'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0').split(',')
 
-if DEBUG == True:
-    FRONTEND_BASE_URL = "http://localhost:5173"
-else:
-    FRONTEND_BASE_URL = "http://localhost:8000"
 
 
 # Application definition
@@ -73,7 +69,7 @@ MIDDLEWARE = [
 
 AUTHENTICATION_BACKENDS = (
     "social_core.backends.google.GoogleOAuth2",
-    'social_core.backends.vk.VKOAuth2',
+    # 'social_core.backends.vk.VKOAuth2',
     "django.contrib.auth.backends.ModelBackend",
 )
 
@@ -82,7 +78,7 @@ ROOT_URLCONF = "animals.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / 'staticfiles'],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -99,9 +95,6 @@ TEMPLATES = [
 WSGI_APPLICATION = "animals.wsgi.application"
 
 
-# Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
@@ -110,8 +103,6 @@ DATABASES = {
 }
 
 
-# Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -144,14 +135,14 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
-STATIC_ROOT = os.path.normpath(os.path.join(BASE_DIR, "staticfiles"))
+STATIC_ROOT = BASE_DIR / "staticfiles"
 STATIC_URL = "/static/"
 
-DJANGO_VITE = {"default": {"dev_mode": True}}
+DJANGO_VITE = {"default": {"dev_mode": DEBUG}}
 
 STATICFILES_DIRS = [
     BASE_DIR / "assets",
-    BASE_DIR / "public",
+    BASE_DIR / "public" / "static",
 ]
 
 # Default primary key field type
@@ -236,7 +227,7 @@ DJOSER = {
 }
 
 
-SENTRY_DSN = os.environ.get("SENTRY_DSN", "https://0b21e236c76a994f5e3f10976bdfc1b7@o4509505207009280.ingest.de.sentry.io/4509505288994896")
+SENTRY_DSN = os.environ.get("SENTRY_DSN")
 
 if SENTRY_DSN:
     sentry_sdk.init(
@@ -275,9 +266,8 @@ SILKY_PYTHON_PROFILER = True
 #     'name': '/api/filter-options/'
 # }]
 
-CELERY_BROKER_URL = "redis://localhost:6379/0"
-
-CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
 
 CELERY_TASK_SERIALIZER = 'json'
 
@@ -319,4 +309,6 @@ SOCIAL_AUTH_VK_OAUTH2_KEY = os.environ.get('VK_OAUTH_KEY')
 SOCIAL_AUTH_VK_OAUTH2_SECRET = os.environ.get('VK_OAUTH_SECRET')
 SOCIAL_AUTH_VK_OAUTH2_SCOPE = ['email']
 
+DJANGO_VITE_ASSETS_PATH = BASE_DIR / 'assets'
 
+DJANGO_VITE_MANIFEST_PATH = DJANGO_VITE_ASSETS_PATH / 'manifest.json'

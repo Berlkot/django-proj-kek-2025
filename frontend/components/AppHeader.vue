@@ -2,7 +2,7 @@
   <header class="bg-white shadow-sm sticky top-0 z-50">
     <div class="container mx-auto px-4 py-3 flex justify-between items-center">
       <router-link to="/" class="flex items-center">
-        <img src="/logo.svg" alt="СпасиЗверя" class="h-10 mr-2" />
+        <img src="/static/logo.svg" alt="СпасиЗверя" class="h-10 mr-2" />
       </router-link>
 
       <nav class="hidden md:flex items-center space-x-4 lg:space-x-6 text-gray-700">

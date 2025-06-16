@@ -4,7 +4,12 @@ import vue from '@vitejs/plugin-vue'
 import path from 'path'
 
 export default defineConfig({
-  base: '/static/',
+  server: {
+    fs: {
+      allow: ['/media', 'public', 'frontend'],
+    },
+  },
+  // base: '/static/',
   plugins: [
     vue(),
     sentryVitePlugin({
