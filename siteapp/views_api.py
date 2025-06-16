@@ -9,8 +9,6 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Count, Avg, QuerySet
 from django.db.models.base import ModelBase
 from rest_framework.parsers import BaseParser
-from silk.profiling.profiler import silk_profile
-from django.utils.decorators import method_decorator
 
 from .models import (
     Advertisement,
@@ -224,7 +222,6 @@ class FilterOptionsAPIView(APIView):
     """
     Возвращает списки возможных значений для фильтров.
     """
-    @silk_profile(name='FilterOptionsAPIView')
     def get(self, request, *args, **kwargs) -> Response:
         gender_options: List[Dict[str, str]] = [
             {"value": choice[0], "label": str(choice[1])}

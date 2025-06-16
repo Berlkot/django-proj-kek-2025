@@ -14,7 +14,9 @@ from pathlib import Path
 import os
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
+from dotenv import load_dotenv
 
+load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -29,6 +31,11 @@ SECRET_KEY = "django-insecure-gx(z)-g!w_u&*wvwtbxg5$rfmp%v&#0xc3jyqk*a9*63h)g@00
 DEBUG = True
 
 ALLOWED_HOSTS = []
+
+if DEBUG == True:
+    FRONTEND_BASE_URL = "http://localhost:5173"
+else:
+    FRONTEND_BASE_URL = "http://localhost:8000"
 
 
 # Application definition
@@ -47,7 +54,9 @@ INSTALLED_APPS = [
     "django_vite",
     "silk", 
     "siteapp.apps.SiteappConfig",
+    'django_celery_beat',
     "djoser",
+    "social_django",
 ]
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -59,7 +68,14 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "social_django.middleware.SocialAuthExceptionMiddleware",
 ]
+
+AUTHENTICATION_BACKENDS = (
+    "social_core.backends.google.GoogleOAuth2",
+    'social_core.backends.vk.VKOAuth2',
+    "django.contrib.auth.backends.ModelBackend",
+)
 
 ROOT_URLCONF = "animals.urls"
 
@@ -73,6 +89,8 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "social_django.context_processors.backends",
+                "social_django.context_processors.login_redirect",
             ],
         },
     },
@@ -205,6 +223,7 @@ DJOSER = {
     "SET_PASSWORD_RETYPE": True,
     "PASSWORD_RESET_CONFIRM_RETYPE": True,
     "LOGOUT_ON_PASSWORD_CHANGE": True,
+    "SOCIAL_AUTH_TOKEN_STRATEGY": "djoser.social.token.jwt.TokenStrategy",
     "SERIALIZERS": {
         "user_create_password_retype": "siteapp.serializers.UserCreateSerializer",
         "user": "siteapp.serializers.CurrentUserSerializer",
@@ -248,3 +267,56 @@ SILKY_META = True
 
 SILKY_RESPONSE_TIME_WARNING = 300
 SILKY_PYTHON_PROFILER = True
+# Профилирование одновременно SILKY_PYTHON_PROFILER и SILKY_PYTHON_PROFILER или же декоратором
+# не будет рвботать. Это вызовет состояние гонки между двумя профайлерами (CProfile и Silk Profiler)
+# SILKY_DYNAMIC_PROFILING = [{
+#     'module': 'siteapp.views_api',
+#     'function': 'FilterOptionsAPIView.get',
+#     'name': '/api/filter-options/'
+# }]
+
+CELERY_BROKER_URL = "redis://localhost:6379/0"
+
+CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
+
+CELERY_TASK_SERIALIZER = 'json'
+
+CELERY_RESULT_SERIALIZER = 'json'
+
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_ENABLE_UTC = True
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'localhost'
+EMAIL_PORT = 1025
+EMAIL_HOST_USER = ''
+EMAIL_HOST_PASSWORD = ''
+EMAIL_USE_TLS = False
+DEFAULT_FROM_EMAIL = 'noreply@spasizverya.com'
+
+SOCIAL_AUTH_PIPELINE = (
+    'social_core.pipeline.social_auth.social_details',
+    'social_core.pipeline.social_auth.social_uid',
+    'social_core.pipeline.social_auth.auth_allowed',
+    'social_core.pipeline.social_auth.social_user',
+    'social_core.pipeline.user.get_username',
+    'social_core.pipeline.user.create_user',
+    'social_core.pipeline.social_auth.associate_user',
+    'social_core.pipeline.social_auth.load_extra_data',
+    'social_core.pipeline.user.user_details',
+    'siteapp.social_pipeline.set_user_defaults',
+    'siteapp.social_pipeline.generate_jwt_and_redirect'
+)
+
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.environ.get('GOOGLE_OAUTH_KEY')
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.environ.get('GOOGLE_OAUTH_SECRET')
+SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = [
+    'https://www.googleapis.com/auth/userinfo.email',
+    'https://www.googleapis.com/auth/userinfo.profile',
+]
+
+SOCIAL_AUTH_VK_OAUTH2_KEY = os.environ.get('VK_OAUTH_KEY')
+SOCIAL_AUTH_VK_OAUTH2_SECRET = os.environ.get('VK_OAUTH_SECRET')
+SOCIAL_AUTH_VK_OAUTH2_SCOPE = ['email']
+
+

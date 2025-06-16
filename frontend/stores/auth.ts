@@ -87,6 +87,33 @@ export const useAuthStore = defineStore('auth', {
         this.loading = false;
       }
     },
+    async socialLogin(payload: { provider: string; code: string; state: string }): Promise<{ success: boolean; }> {
+      this.loading = true;
+      this.error = null;
+      try {
+        const response = await axios.post(`${API_BASE_URL}/auth/o/${payload.provider}/`, {
+          code: payload.code,
+          state: payload.state,
+        });
+        
+        const { access, refresh } = response.data;
+        this.setTokens(access, refresh);
+        await this.fetchUser();
+        return { success: true };
+        
+      } catch (err: any) {
+        this.clearAuthData();
+        if (axios.isAxiosError(err) && err.response) {
+            this.error = err.response.data?.detail || err.response.data?.non_field_errors?.join(', ') || 'Ошибка социального входа.';
+        } else {
+            this.error = 'Произошла сетевая ошибка при социальном входе.';
+        }
+        console.error('Social login error:', err);
+        return { success: false };
+      } finally {
+        this.loading = false;
+      }
+    },
 
     async register(userData: any): Promise<{ success: boolean; errors?: Record<string, any> }> {
       this.loading = true;
@@ -180,6 +207,6 @@ export const useAuthStore = defineStore('auth', {
             axios.defaults.headers.common['Authorization'] = `Bearer ${this.accessToken}`;
             await this.fetchUser();
         }
-    }
+    },
   },
 });

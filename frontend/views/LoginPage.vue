@@ -68,6 +68,26 @@
           </button>
         </div>
       </form>
+      <div class="relative my-4">
+        <div class="absolute inset-0 flex items-center">
+          <div class="w-full border-t border-gray-300"></div>
+        </div>
+        <div class="relative flex justify-center text-sm">
+          <span class="px-2 bg-white text-gray-500">Или войдите через</span>
+        </div>
+      </div>
+      
+      <div class="space-y-3">
+        <button @click="redirectToProvider('google-oauth2')" class="w-full flex items-center justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+          <font-awesome-icon :icon="['fab', 'google']" class="h-5 w-5 mr-2"/>
+          Войти через Google
+        </button>
+        <button @click="redirectToProvider('vk-oauth2')" class="w-full flex items-center justify-center py-2 px-4 border border-blue-600 rounded-md shadow-sm bg-blue-600 text-sm font-medium text-white hover:bg-blue-700">
+          <font-awesome-icon :icon="['fab', 'vk']" class="mr-2 text-lg" />
+          Войти через ВКонтакте
+        </button>
+      </div>
+
       <p class="mt-4 text-center text-sm text-gray-600">
         Нет аккаунта?
         <router-link :to="{ name: 'Register' }" class="font-medium text-green-600 hover:text-green-500">
@@ -92,6 +112,11 @@ const route = useRoute();
 // Локальное состояние для ошибок полей и общих ошибок
 const formErrors = ref<Record<string, string[]>>({}); 
 const generalError = ref<string | null>(null);
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
+const redirectToProvider = (provider: 'google-oauth2' | 'vk-oauth2') => {
+     window.location.href = `${API_BASE_URL}/api/social/login/${provider}/`;
+}
 
 const handleLogin = async () => {
   formErrors.value = {}; // Сброс ошибок полей

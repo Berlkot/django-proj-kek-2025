@@ -34,6 +34,8 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { faTelegram, faVk, faWhatsapp, faOdnoklassniki } from '@fortawesome/free-brands-svg-icons'
 import * as Sentry from '@sentry/vue'
+import { faG } from '@fortawesome/free-solid-svg-icons/faG'
+import { faGoogle } from '@fortawesome/free-brands-svg-icons/faGoogle'
 
 library.add(
   faSearch,
@@ -54,6 +56,7 @@ library.add(
   faVenusMars,
   faTelegram,
   faVk,
+  faGoogle,
   faWhatsapp,
   faOdnoklassniki,
   faPencilAlt,

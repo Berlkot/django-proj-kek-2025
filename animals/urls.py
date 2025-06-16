@@ -7,12 +7,14 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/social/', include('social_django.urls', namespace='social')),
+    path('social-auth-success/', TemplateView.as_view(template_name="social_auth_success.html"), name="social_auth_success"), 
     path('api/', include('siteapp.urls')),
     path('auth/', include('djoser.urls')),
     path('auth/', include('djoser.urls.jwt')),
     path('testing/', include('siteapp.non_api_urls')),
 
-    path('silk/', include('silk.urls', namespace='silk')),
+    # path('silk/', include('silk.urls', namespace='silk')),
     re_path(r'^((?!media|silk).)*$', TemplateView.as_view(template_name='index.html'), name='app'),
 ]
 

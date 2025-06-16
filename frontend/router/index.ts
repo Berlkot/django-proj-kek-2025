@@ -108,6 +108,11 @@ const routes = [
     component: () => import('../views/AdminUsersPage.vue'),
     meta: { requiresAuth: true, requiresAdmin: true },
   },
+  {
+     path: '/social/auth/callback/',
+     name: 'SocialAuthCallback',
+     component: () => import('../views/SocialAuthCallback.vue'),
+   },
 ]
 
 const router = createRouter({
