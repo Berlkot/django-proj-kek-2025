@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -43,11 +45,13 @@ INSTALLED_APPS = [
     "django_filters",
     "corsheaders",
     "django_vite",
+    "silk", 
     "siteapp.apps.SiteappConfig",
     "djoser",
 ]
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
+    "silk.middleware.SilkyMiddleware", 
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -211,3 +215,36 @@ DJOSER = {
     "HIDE_USERS": True,
     "EMAIL": {},
 }
+
+
+SENTRY_DSN = os.environ.get("SENTRY_DSN", "https://0b21e236c76a994f5e3f10976bdfc1b7@o4509505207009280.ingest.de.sentry.io/4509505288994896")
+
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[
+            DjangoIntegration(),
+        ],
+        # В продакшене рекомендуется установить меньшее значение, например 0.1
+        traces_sample_rate=1.0,
+        profiles_sample_rate=1.0,
+        send_default_pii=True,
+
+        environment=os.environ.get("SENTRY_ENVIRONMENT", "development"),
+    )
+
+# Разрешить доступ к интерфейсу Silk только суперпользователям
+SILKY_AUTHENTICATION = True 
+SILKY_AUTHORISATION = True
+
+SILKY_MAX_RECORDED_REQUESTS = 1000
+
+SILKY_IGNORE_PATHS = [
+    r'^/silk/',
+    r'^/admin/'
+]
+
+SILKY_META = True
+
+SILKY_RESPONSE_TIME_WARNING = 300
+SILKY_PYTHON_PROFILER = True

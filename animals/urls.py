@@ -12,7 +12,8 @@ urlpatterns = [
     path('auth/', include('djoser.urls.jwt')),
     path('testing/', include('siteapp.non_api_urls')),
 
-    re_path(r'^((?!media).)*$', TemplateView.as_view(template_name='index.html'), name='app'),
+    path('silk/', include('silk.urls', namespace='silk')),
+    re_path(r'^((?!media|silk).)*$', TemplateView.as_view(template_name='index.html'), name='app'),
 ]
 
 # Для обслуживания медиа файлов в режиме DEBUG

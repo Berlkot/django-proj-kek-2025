@@ -35,13 +35,13 @@ export interface AgeCategory {
 }
 
 export interface FilterOptions {
-  regions: Region[];
-  species: Species[];
-  ad_statuses: AdStatus[];
-  colors: AnimalColor[];
-  genders: GenderOption[];
-  age_categories: AgeCategory[];
-  breeds: Breed[];
+  regions: Region[]
+  species: Species[]
+  ad_statuses: AdStatus[]
+  colors: AnimalColor[]
+  genders: GenderOption[]
+  age_categories: AgeCategory[]
+  breeds: Breed[]
 }
 
 export interface AdAnimal {
@@ -81,15 +81,15 @@ export interface PaginatedAdvertisementsResponse {
 }
 
 export interface SelectedFilters {
-  region: number | null;
-  age_category: string | null;
-  ad_status: number | null;
-  species: number | null;
-  breed: number | null;
-  color: number | null;
-  gender: string | null;
-  publication_date_after: string | null; 
-  publication_date_before: string | null;
+  region: number | null
+  age_category: string | null
+  ad_status: number | null
+  species: number | null
+  breed: number | null
+  color: number | null
+  gender: string | null
+  publication_date_after: string | null
+  publication_date_before: string | null
 }
 export interface AdAuthor {
   id: number
@@ -208,14 +208,73 @@ export interface AdvertisementFormData {
 }
 
 export interface Breed {
-  id: number;
-  name: string;
-  species_id: number; 
+  id: number
+  name: string
+  species_id: number
 }
 
 export interface AdvertisementRating {
-  id: number;
-  user_id: number;
-  advertisement_id: number;
-  rating: number;
+  id: number
+  user_id: number
+  advertisement_id: number
+  rating: number
+}
+
+export interface Role {
+  id: number
+  name: string
+}
+
+// НОВЫЙ ИНТЕРФЕЙС
+export interface ProfileUser {
+  id: number
+  email: string
+  username: string
+  display_name?: string
+  first_name?: string
+  last_name?: string
+  avatar_url?: string | null
+  role_name?: string | null
+  region_name?: string | null
+  phone_number?: string | null
+  date_joined: string
+  is_staff?: boolean
+}
+
+// НОВЫЙ ИНТЕРФЕЙС
+export interface ProfileData {
+  user: ProfileUser
+  advertisements: Advertisement[] // Используем существующий тип Advertisement
+}
+
+// НОВЫЙ ИНТЕРФЕЙС
+export interface ProfileFormData {
+  display_name: string
+  first_name: string
+  last_name: string
+  phone_number: string | null
+  region: number | null
+  avatar: File | null
+  email: string
+  role?: number | null
+  is_staff?: boolean
+}
+
+export interface AdminUser {
+  id: number
+  email: string
+  username: string
+  display_name: string
+  role_name: string | null
+  region_name: string | null
+  is_staff: boolean
+  is_active: boolean
+  date_joined: string
+}
+
+export interface PaginatedAdminUsersResponse {
+  count: number
+  next: string | null
+  previous: string | null
+  results: AdminUser[]
 }

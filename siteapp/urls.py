@@ -13,12 +13,17 @@ from .views_api import (
     ArticleCommentRetrieveUpdateDestroyAPIView,
     AdvertisementViewSet,
     BreedListAPIView,
-    AdvertisementRatingViewSet 
+    AdvertisementRatingViewSet,
+    ProfileViewSet,
+    RoleListAPIView,
+    UserAdminViewSet
 )
 
 router = DefaultRouter()
 router.register(r"advertisements", AdvertisementViewSet, basename="advertisement")
 router.register(r'advertisement-ratings', AdvertisementRatingViewSet, basename='advertisement-rating')
+router.register(r'profiles', ProfileViewSet, basename='profile')
+router.register(r'admin/users', UserAdminViewSet, basename='admin-user')
 
 urlpatterns = [
     path("", include(router.urls)),
@@ -56,4 +61,5 @@ urlpatterns = [
         name="ad_response_detail",
     ),
     path("breeds/", BreedListAPIView.as_view(), name="breed_list"),
+    path("roles/", RoleListAPIView.as_view(), name="role_list"),
 ]

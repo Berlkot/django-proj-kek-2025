@@ -1,3 +1,5 @@
+from typing import Type
+
 from rest_framework import permissions
 
 
@@ -9,7 +11,7 @@ class IsOwnerOrAdminOrModeratorForComment(permissions.BasePermission):
     Удаление: владелец (если can_delete_own_comment) ИЛИ пользователь с правом can_delete_any_comment ИЛИ is_staff.
     """
 
-    def has_object_permission(self, request, view, obj):
+    def has_object_permission(self, request: Type, view: Type, obj: Type) -> bool:
 
         if request.method in permissions.SAFE_METHODS:
             return True
@@ -47,12 +49,12 @@ class IsAdminOrReadOnly(permissions.BasePermission):
     Разрешает любые действия (включая удаление чужих) только администратору.
     """
 
-    def has_permission(self, request, view):
+    def has_permission(self, request: Type, view: Type) -> bool:
         if request.method in permissions.SAFE_METHODS:
             return True
         return request.user and request.user.is_staff
 
-    def has_object_permission(self, request, view, obj):
+    def has_object_permission(self, request: Type, view: Type, obj: Type) -> bool:
         if request.method in permissions.SAFE_METHODS:
             return True
 
@@ -65,7 +67,7 @@ class CanManageArticles(permissions.BasePermission):
     Чтение разрешено всем.
     """
 
-    def has_permission(self, request, view):
+    def has_permission(self, request: Type, view: Type) -> bool:
         if request.method in permissions.SAFE_METHODS:
             return True
 
@@ -84,7 +86,7 @@ class CanManageArticles(permissions.BasePermission):
 
         return request.user and request.user.is_authenticated
 
-    def has_object_permission(self, request, view, obj):
+    def has_object_permission(self, request: Type, view: Type, obj: Type) -> bool:
 
         if request.method in permissions.SAFE_METHODS:
             return True
@@ -125,7 +127,7 @@ class CanManageAdvertisements(permissions.BasePermission):
         - Модератор/Админ: если есть право can_manage_any_advertisement ИЛИ is_staff.
     """
 
-    def has_permission(self, request, view):
+    def has_permission(self, request: Type, view: Type) -> bool:
         if request.method in permissions.SAFE_METHODS:
             return True
 
@@ -141,7 +143,7 @@ class CanManageAdvertisements(permissions.BasePermission):
 
         return True
 
-    def has_object_permission(self, request, view, obj):
+    def has_object_permission(self, request: Type, view: Type, obj: Type) -> bool:
         if request.method in permissions.SAFE_METHODS:
             return True
 
@@ -174,14 +176,24 @@ class IsOwnerOrAdminOrReadOnly(permissions.BasePermission):
     Разрешает редактирование (PUT, PATCH) и удаление (DELETE) только владельцу объекта или администратору (is_staff).
     """
 
-    def has_permission(self, request, view):
+    def has_permission(self, request: Type, view: Type) -> bool:
         if request.method in permissions.SAFE_METHODS:
             return True
         return request.user and request.user.is_authenticated
 
-    def has_object_permission(self, request, view, obj):
+    def has_object_permission(self, request: Type, view: Type, obj: Type) -> bool:
         if request.method in permissions.SAFE_METHODS:
             return True
         if hasattr(obj, 'user'):
             return obj.user == request.user or request.user.is_staff
         return request.user.is_staff
+        
+class IsOwnerOrAdmin(permissions.BasePermission):
+    """
+    Разрешает доступ владельцу объекта или администратору.
+    """
+    def has_object_permission(self, request: Type, view: Type, obj: Type) -> bool:
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return obj == request.user or request.user.is_staff
+

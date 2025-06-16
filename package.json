@@ -18,6 +18,8 @@
     "@fortawesome/free-solid-svg-icons": "^6.7.2",
     "@fortawesome/vue-fontawesome": "^3.0.8",
     "@headlessui/vue": "^1.7.23",
+    "@sentry/vite-plugin": "^3.5.0",
+    "@sentry/vue": "^9.29.0",
     "axios": "^1.9.0",
     "pinia": "^3.0.1",
     "vue": "^3.5.13",

@@ -2,7 +2,7 @@ import './styles/tailwind.css'
 import 'vite/modulepreload-polyfill'
 
 import App from './App.vue'
-import { useAuthStore } from './stores/auth';
+import { useAuthStore } from './stores/auth'
 
 import router from './router'
 import { createApp } from 'vue'
@@ -30,9 +30,10 @@ import {
   faPencilAlt,
   faTrashAlt,
   faHeart,
-  faStar
+  faStar,
 } from '@fortawesome/free-solid-svg-icons'
 import { faTelegram, faVk, faWhatsapp, faOdnoklassniki } from '@fortawesome/free-brands-svg-icons'
+import * as Sentry from '@sentry/vue'
 
 library.add(
   faSearch,
@@ -58,23 +59,42 @@ library.add(
   faPencilAlt,
   faTrashAlt,
   faHeart,
-  faStar
+  faStar,
 )
 const app = createApp(App)
 
 app.use(createPinia())
 
+Sentry.init({
+  app,
+  dsn: 'https://b8f76648080391f01c648c50fc87ccce@o4509505207009280.ingest.de.sentry.io/4509505248362576',
+  integrations: [
+    Sentry.browserTracingIntegration({ router }),
+    Sentry.replayIntegration({
+      maskAllText: true,
+      blockAllMedia: true,
+    }),
+  ],
+  tracesSampleRate: 1.0,
 
-const authStore = useAuthStore();
-authStore.initAuth().then(() => {
-    app.use(router);
-    app.component('font-awesome-icon', FontAwesomeIcon);
-    app.mount('#app');
-}).catch(error => {
-    console.error("Auth initialization failed:", error);
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1.0,
 
+  environment: import.meta.env.VITE_SENTRY_ENVIRONMENT || 'development',
+})
 
-    app.use(router);
-    app.component('font-awesome-icon', FontAwesomeIcon);
-    app.mount('#app');
-});
+const authStore = useAuthStore()
+authStore
+  .initAuth()
+  .then(() => {
+    app.use(router)
+    app.component('font-awesome-icon', FontAwesomeIcon)
+    app.mount('#app')
+  })
+  .catch((error) => {
+    console.error('Auth initialization failed:', error)
+
+    app.use(router)
+    app.component('font-awesome-icon', FontAwesomeIcon)
+    app.mount('#app')
+  })

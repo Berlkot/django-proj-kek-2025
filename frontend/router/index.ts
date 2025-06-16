@@ -2,11 +2,11 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomePage from '../views/HomePage.vue'
 import ArticlesPage from '../views/ArticlesPage.vue'
 import AdvertisementsPage from '../views/AdvertisementsPage.vue'
-import LoginPage from '../views/LoginPage.vue';
-import RegisterPage from '../views/RegisterPage.vue';
-import ArticleEditPage from '../views/ArticleEditPage.vue';
-import AdvertisementEditPage from '../views/AdvertisementEditPage.vue';
-import { useAuthStore } from '../stores/auth';
+import LoginPage from '../views/LoginPage.vue'
+import RegisterPage from '../views/RegisterPage.vue'
+import ArticleEditPage from '../views/ArticleEditPage.vue'
+import AdvertisementEditPage from '../views/AdvertisementEditPage.vue'
+import { useAuthStore } from '../stores/auth'
 
 // Определяем тип для маршрутов для лучшей типизации
 const routes = [
@@ -31,13 +31,13 @@ const routes = [
     name: 'ArticleEdit',
     component: ArticleEditPage,
     props: true,
-    meta: { requiresAuth: true, requiresModeratorOrAdmin: true }
+    meta: { requiresAuth: true, requiresAdmin: true },
   },
   {
     path: '/articles/create',
     name: 'ArticleCreate',
     component: ArticleEditPage,
-    meta: { requiresAuth: true, requiresModeratorOrAdmin: true }
+    meta: { requiresAuth: true, requiresAdmin: true },
   },
   {
     path: '/advertisements',
@@ -46,24 +46,24 @@ const routes = [
   },
 
   {
-     path: '/advertisement/:id(\\d+)',
-     name: 'AdvertisementDetail',
-     component: () => import('../views/AdvertisementDetailPage.vue'),
-     props: true
-   },
-   {
-     path: '/advertisements/edit/:id(\\d+)',
-     name: 'AdvertisementEdit',
-     component: AdvertisementEditPage,
-     props: true,
-     meta: { requiresAuth: true /* , requiresAdPermission: true */ }
-   },
-   {
-     path: '/advertisements/create',
-     name: 'AdvertisementCreate',
-     component: AdvertisementEditPage,
-     meta: { requiresAuth: true /* , requiresAdPermission: true */ }
-   },
+    path: '/advertisement/:id(\\d+)',
+    name: 'AdvertisementDetail',
+    component: () => import('../views/AdvertisementDetailPage.vue'),
+    props: true,
+  },
+  {
+    path: '/advertisements/edit/:id(\\d+)',
+    name: 'AdvertisementEdit',
+    component: AdvertisementEditPage,
+    props: true,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/advertisements/create',
+    name: 'AdvertisementCreate',
+    component: AdvertisementEditPage,
+    meta: { requiresAuth: true },
+  },
   {
     path: '/rules',
     name: 'Rules',
@@ -96,15 +96,24 @@ const routes = [
     name: 'Shelters',
     component: HomePage,
   },
-
-
+  {
+    path: '/profile/:id(\\d+)',
+    name: 'Profile',
+    component: () => import('../views/ProfilePage.vue'),
+    props: true,
+  },
+  {
+    path: '/admin-panel/users',
+    name: 'AdminUsers',
+    component: () => import('../views/AdminUsersPage.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true },
+  },
 ]
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
   scrollBehavior(to, from, savedPosition) {
-
     if (savedPosition) {
       return savedPosition
     } else {
@@ -113,35 +122,20 @@ const router = createRouter({
   },
 })
 
-// Навигационный страж (Navigation Guard)
 router.beforeEach((to, from, next) => {
-  const authStore = useAuthStore();
-
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    next({ name: 'Login', query: { next: to.fullPath } });
+  const authStore = useAuthStore()
+  const user = authStore.user
+  const isAdminRoute = to.matched.some((record) => record.meta.requiresAdmin)
+  if (isAdminRoute && (!user || !user.is_staff)) {
+    console.warn('Access to admin route denied.')
+    next({ name: 'Home' })
+  } else if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    next({ name: 'Login', query: { next: to.fullPath } })
   } else if (to.meta.guestOnly && authStore.isAuthenticated) {
-    next({ name: 'Home' });
-  } else if (to.meta.requiresModeratorOrAdmin) {
-
-
-
-
-    const user = authStore.user;
-
-
-
-
-
-    if (!user || (!user.is_staff /* && !user.role?.can_manage_articles */)) {
-      console.warn('Access to moderator/admin route denied.');
-      next({ name: 'Home' });
-    } else {
-      next();
-    }
+    next({ name: 'Home' })
+  } else {
+    next()
   }
-  else {
-    next();
-  }
-});
+})
 
 export default router

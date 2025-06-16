@@ -2,7 +2,7 @@ import django_filters
 from django.utils import timezone
 from dateutil.relativedelta import relativedelta
 from .models import Advertisement, Animal, Region, AdStatus, Species, AnimalColor, Breed
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 
 
 AGE_CHOICES = [
@@ -14,8 +14,11 @@ AGE_CHOICES = [
     ("unknown", "Возраст неизвестен"),
 ]
 
-
 class AdvertisementFilter(django_filters.FilterSet):
+    """
+    Фильтр для объявлений, позволяющий фильтровать по региону, статусу объявления, виду, породе,
+    полу, окрасу, возрастной категории, поисковому запросу и дате публикации.
+    """
 
     region = django_filters.ModelChoiceFilter(
         field_name="user__region", queryset=Region.objects.all(), label="Регион"
@@ -67,7 +70,15 @@ class AdvertisementFilter(django_filters.FilterSet):
             'age_category', 'search', 'publication_date_after', 'publication_date_before'
         ]
 
-    def filter_by_age_category(self, queryset, name, value):
+    def filter_by_age_category(self, queryset: QuerySet, name: str, value: str) -> QuerySet:
+        """
+        Фильтрует объявления по возрастной категории животного.
+
+        :param queryset: Исходный QuerySet
+        :param name: Имя фильтра
+        :param value: Выбранная возрастная категория
+        :return: Отфильтрованный QuerySet
+        """
         now = timezone.now().date()
         if value == "unknown":
             return queryset.filter(animal__birth_date__isnull=True)
@@ -77,7 +88,6 @@ class AdvertisementFilter(django_filters.FilterSet):
         if value == "0_0.5":
             min_age_delta = relativedelta(months=0)
             max_age_delta = relativedelta(months=6)
-
             start_date = now - max_age_delta
             end_date = now - min_age_delta
         elif value == "0.5_1":
@@ -96,7 +106,6 @@ class AdvertisementFilter(django_filters.FilterSet):
             start_date = now - max_age_delta
             end_date = now - min_age_delta
         elif value == "7_inf":
-
             max_age_delta = relativedelta(years=7)
             start_date = now - relativedelta(years=100)
             end_date = now - max_age_delta
@@ -109,7 +118,15 @@ class AdvertisementFilter(django_filters.FilterSet):
             animal__birth_date__lte=end_date,
         )
 
-    def global_search(self, queryset, name, value):
+    def global_search(self, queryset: QuerySet, name: str, value: str) -> QuerySet:
+        """
+        Выполняет глобальный поиск по заголовку, описанию и имени животного.
+
+        :param queryset: Исходный QuerySet
+        :param name: Имя фильтра
+        :param value: Поисковый запрос
+        :return: Отфильтрованный QuerySet
+        """
         if value:
             return queryset.filter(
                 Q(title__icontains=value)
