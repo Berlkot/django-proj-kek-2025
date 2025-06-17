@@ -24,7 +24,7 @@ from .models import (
     Volunteering,
     ArticleCategory,
     AnimalColor,
-    AdvertisementRating 
+    AdvertisementRating
 )
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
@@ -154,19 +154,19 @@ def show_active_ad_ids_for_users(modeladmin, request, queryset):
 
     for user in queryset:
         user_has_active_ads = Advertisement.objects.filter(user=user, status=active_status).exists()
-        
+
         if user_has_active_ads:
             active_ad_ids = Advertisement.objects.filter(user=user, status=active_status) \
                                              .values_list('id', flat=True) \
                                              .order_by('-publication_date')[:5]
-            
+
             ids_str = ", ".join(map(str, active_ad_ids))
             if len(active_ad_ids) == 5 and Advertisement.objects.filter(user=user, status=active_status).count() > 5:
                 ids_str += ", ..."
             messages_to_user.append(f"Пользователь {user.email}: есть активные объявления (ID: {ids_str}).")
         else:
             messages_to_user.append(f"Пользователь {user.email}: нет активных объявлений.")
-    
+
     if not messages_to_user:
         modeladmin.message_user(request, "Не выбраны пользователи.")
     else:
@@ -185,7 +185,6 @@ def deactivate_users(modeladmin, request, queryset):
     )
 
 
-# Custom User Admin
 class UserAdmin(BaseUserAdmin):
     list_display = (
         "email",
@@ -342,11 +341,11 @@ class ShelterAdmin(admin.ModelAdmin):
         if obj.website:
             return format_html('<a href="{0}" target="_blank">{0}</a>', obj.website)
         return "–"
-    
+
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
         queryset = queryset.annotate(
-            _animals_count_annotated=Count('animalinshelter', distinct=True) 
+            _animals_count_annotated=Count('animalinshelter', distinct=True)
         )
         return queryset
 

@@ -47,7 +47,7 @@ class AdvertisementFilter(django_filters.FilterSet):
     search = django_filters.CharFilter(method="global_search", label="Поиск")
 
     breed = django_filters.ModelChoiceFilter(
-        field_name='animal__breed', 
+        field_name='animal__breed',
         queryset=Breed.objects.all(),
         label='Порода'
     )
@@ -66,7 +66,7 @@ class AdvertisementFilter(django_filters.FilterSet):
     class Meta:
         model = Advertisement
         fields = [
-            'region', 'ad_status', 'species', 'breed', 'gender', 'color', 
+            'region', 'ad_status', 'species', 'breed', 'gender', 'color',
             'age_category', 'search', 'publication_date_after', 'publication_date_before'
         ]
 

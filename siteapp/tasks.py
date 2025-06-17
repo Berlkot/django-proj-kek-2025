@@ -1,4 +1,3 @@
-# siteapp/tasks.py
 from celery import shared_task
 from django.utils import timezone
 from django.core.mail import send_mail
@@ -14,19 +13,16 @@ def archive_old_advertisements() -> str:
     Архивирует объявления, которые находятся в завершенном статусе
     более 30 дней.
     
-    Завершенные статусы: "Найдено владельцем", "Передано владельцу", "В архиве".
+    Завершенные статусы: "Найдено владельцем", "Передано владельцу".
     """
     try:
         archive_status, _ = AdStatus.objects.get_or_create(name="В архиве")
-        # Статусы, после которых можно архивировать
         completed_statuses = AdStatus.objects.filter(
-            name__in=["Найдено владельцем", "Передано владельцу"]
+            name__in=["Найдено", "Передано владельцу"]
         )
         
-        # Дата, раньше которой объявления считаются старыми
         thirty_days_ago = timezone.now() - timedelta(days=30)
         
-        # Находим объявления для архивации
         ads_to_archive = Advertisement.objects.filter(
             status__in=completed_statuses,
             publication_date__lt=thirty_days_ago
@@ -57,14 +53,11 @@ def send_weekly_digest() -> str:
     Отправляет еженедельный дайджест администраторам сайта.
     """
     try:
-        # Находим всех администраторов
         admins = User.objects.filter(is_staff=True)
         admin_emails = [admin.email for admin in admins if admin.email]
 
         if not admin_emails:
             return "No admin users with emails found to send digest."
-
-        # Собираем статистику за последнюю неделю
         one_week_ago = timezone.now() - timedelta(weeks=1)
         new_ads_count = Advertisement.objects.filter(publication_date__gte=one_week_ago).count()
         new_users_count = User.objects.filter(date_joined__gte=one_week_ago).count()
@@ -75,15 +68,14 @@ def send_weekly_digest() -> str:
             'report_date': timezone.now().strftime('%d.%m.%Y'),
         }
 
-        # Рендерим HTML-шаблон письма
         html_message = render_to_string('emails/weekly_digest.html', context)
         
         send_mail(
             subject='Еженедельный отчет по сайту "СпасиЗверя"',
-            message=f"Новых объявлений: {new_ads_count}. Новых пользователей: {new_users_count}.", # Plain text fallback
+            message=f"Новых объявлений: {new_ads_count}. Новых пользователей: {new_users_count}.",
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=admin_emails,
-            html_message=html_message, # HTML-версия письма
+            html_message=html_message,
             fail_silently=False,
         )
         

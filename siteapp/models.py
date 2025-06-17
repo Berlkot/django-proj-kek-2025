@@ -103,7 +103,7 @@ class User(AbstractUser):
     Attributes:
         display_name: отображаемое имя, максимум 150 символов, необязательное поле.
         email: уникальный email пользователя.
-        phone_number: номер телефона, должен соответствовать заданному формату, 
+        phone_number: номер телефона, должен соответствовать заданному формату,
                       максимум 20 символов, необязательное поле.
         role: роль пользователя, связь с моделью Role, необязательное поле.
         region: регион пользователя, связь с моделью Region, необязательное поле.
@@ -116,10 +116,10 @@ class User(AbstractUser):
         message=_("Номер телефона должен быть введен в формате: '+999999999'. До 15 цифр.")
     )
     phone_number = models.CharField(
-        _("номер телефона"), 
+        _("номер телефона"),
         validators=[phone_regex],
-        max_length=20, 
-        blank=True, 
+        max_length=20,
+        blank=True,
         null=True
     )
 
@@ -413,7 +413,7 @@ class ActiveAdvertisementManager(models.Manager):
     def get_queryset(self) -> models.QuerySet:
         """
         Возвращает базовый QuerySet для объявлений.
-        
+
         Returns:
             models.QuerySet: Базовый QuerySet.
         """
@@ -422,7 +422,7 @@ class ActiveAdvertisementManager(models.Manager):
     def active(self) -> models.QuerySet:
         """
         Возвращает только объявления со статусом "Активно".
-        
+
         Returns:
             models.QuerySet: QuerySet с активными объявлениями.
         """
@@ -441,7 +441,7 @@ class ActiveAdvertisementManager(models.Manager):
     def recently_published(self, days: int = 7) -> models.QuerySet:
         """
         Возвращает активные объявления, опубликованные за последние N дней.
-        
+
         Args:
             days (int): Количество дней для фильтрации объявлений.
 
@@ -456,7 +456,7 @@ class ActiveAdvertisementManager(models.Manager):
 class Advertisement(models.Model):
     """
     Модель объявления.
-    
+
     Attributes:
         user (models.ForeignKey): Пользователь, разместивший объявление.
         animal (models.ForeignKey): Животное, описанное в объявлении.
@@ -508,7 +508,7 @@ class Advertisement(models.Model):
 class AdvertisementRating(models.Model):
     """
     Модель оценки объявления.
-    
+
     Attributes:
         advertisement (models.ForeignKey): Объявление, которое было оценено.
         user (models.ForeignKey): Пользователь, который оставил оценку.
@@ -517,8 +517,8 @@ class AdvertisementRating(models.Model):
     """
 
     advertisement = models.ForeignKey(
-        Advertisement, 
-        related_name='ratings', 
+        Advertisement,
+        related_name='ratings',
         on_delete=models.CASCADE,
         verbose_name=_("объявление"),
         help_text=_("Объявление, которое было оценено.")
@@ -536,7 +536,7 @@ class AdvertisementRating(models.Model):
         help_text=_("Оценка, которую пользователь оставил.")
     )
     created_at = models.DateTimeField(
-        _("дата оценки"), 
+        _("дата оценки"),
         auto_now_add=True,
         help_text=_("Дата, когда была оставлена оценка.")
     )
@@ -839,4 +839,3 @@ class Volunteering(models.Model):
             str: строковое представление объекта волонтёрства.
         """
         return f"{_('Волонтёрство:')} {self.user.get_full_name()} {_('в приюте')} {self.shelter.name} {_('с')} {self.start_date.strftime('%Y-%m-%d %H:%M')}"
-

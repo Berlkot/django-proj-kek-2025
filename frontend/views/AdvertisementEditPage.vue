@@ -160,10 +160,8 @@
 import { ref, reactive, onMounted, computed, watch, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import axios from 'axios';
-import type { AdvertisementFormData, AnimalFormData, FilterOptions, Species, AdPhoto as ExistingAdPhotoType, AdvertisementDetail } from '../types';
+import type { AdvertisementFormData, FilterOptions, Breed, AdPhoto as ExistingAdPhotoType, AdvertisementDetail } from '../types';
 import { useAuthStore } from '../stores/auth';
-
-interface Breed { id: number; name: string; species: number; }
 
 const props = defineProps<{ id?: string; }>();
 const router = useRouter();
@@ -183,12 +181,7 @@ const newPhotoPreviews = ref<{ name: string; url: string }[]>([]);
 const photosToDeleteIds = ref<number[]>([]);
 
 const filterOptions = ref<FilterOptions>({
-  regions: [], species: [], ad_statuses: [], colors: [], genders: [], age_categories: [],
-});
-const allBreeds = ref<Breed[]>([]);
-const availableBreeds = computed(() => {
-  if (!formData.animal_data.species || !allBreeds.value.length) return [];
-  return allBreeds.value.filter(b => b.species === formData.animal_data.species);
+  regions: [], species: [], ad_statuses: [], colors: [], genders: [], age_categories: [], breeds: []
 });
 
 
@@ -206,56 +199,40 @@ const canDeleteCurrentAd = computed(() => {
   if (!authStore.isAuthenticated || !authStore.user || !adId.value) return false;
   if (authStore.user.is_staff) return true;
   if (authStore.user.role_permissions?.can_manage_any_advertisement) return true;
-
   return authStore.user.id === currentAdAuthorId.value && authStore.user.role_permissions?.can_delete_own_advertisement;
 });
 
+const availableBreeds = computed(() => {
+  if (!formData.animal_data.species || !filterOptions.value.breeds || filterOptions.value.breeds.length === 0) {
+    return [];
+  }
+  return filterOptions.value.breeds.filter(b => b.species_id === formData.animal_data.species);
+});
+
 const fetchFilterOptionsAndBreeds = async () => {
-
   try {
-    const [optionsRes, breedsRes] = await Promise.all([
-      axios.get<FilterOptions>(`${API_BASE_URL}/filter-options/`),
-      axios.get<any>(`${API_BASE_URL}/breeds/`)
-    ]);
-    filterOptions.value = optionsRes.data;
-
-    if (Array.isArray(breedsRes.data)) {
-      allBreeds.value = breedsRes.data as Breed[];
-    } else if (breedsRes.data && Array.isArray(breedsRes.data.results)) {
-      allBreeds.value = breedsRes.data.results as Breed[];
-    } else {
-      allBreeds.value = [];
-      console.warn("Ответ от /api/breeds/ не является массивом или объектом с results:", breedsRes.data);
-
-
-    }
+    const response = await axios.get<FilterOptions>(`${API_BASE_URL}/filter-options/`);
+    filterOptions.value = response.data;
   } catch (err) {
     console.error("Ошибка загрузки опций/пород:", err);
     initialError.value = "Не удалось загрузить данные для фильтров или список пород.";
-
     throw err;
   }
 };
 
+
 const fetchAdData = async () => {
   if (!adId.value) return;
-
-
   try {
     const response = await axios.get<AdvertisementDetail>(`${API_BASE_URL}/advertisements/${adId.value}/`);
     const ad = response.data;
 
     currentAdAuthorId.value = ad.user.id;
-
     formData.title = ad.title;
     formData.description = ad.description;
 
-
-
-
     const statusObj = filterOptions.value.ad_statuses.find(s => s.name === ad.status);
     formData.status = statusObj ? statusObj.id : null;
-
     formData.latitude = ad.latitude;
     formData.longitude = ad.longitude;
 
@@ -264,21 +241,18 @@ const fetchAdData = async () => {
       formData.animal_data.birth_date = ad.animal.birth_date ? ad.animal.birth_date.split('T')[0] : null;
 
       const speciesObj = filterOptions.value.species.find(s => s.name === ad.animal.species);
-      formData.animal_data.species = speciesObj ? speciesObj.id : null;
-
-
-
-      selectedSpeciesChanged();
-
-
+      const speciesId = speciesObj ? speciesObj.id : null;
+      formData.animal_data.species = speciesId;
+      
       await nextTick();
 
-      const breedObj = availableBreeds.value.find(b => b.name === ad.animal.breed);
-      formData.animal_data.breed = breedObj ? breedObj.id : null;
-
+      if (speciesId && ad.animal.breed) {
+          const breedObj = availableBreeds.value.find(b => b.name === ad.animal.breed);
+          formData.animal_data.breed = breedObj ? breedObj.id : null;
+      }
+      
       const colorObj = filterOptions.value.colors.find(c => c.name === ad.animal.color);
       formData.animal_data.color = colorObj ? colorObj.id : null;
-
       const genderOption = filterOptions.value.genders.find(g => g.label === ad.animal.gender);
       formData.animal_data.gender = genderOption ? genderOption.value : null;
     }
@@ -286,48 +260,15 @@ const fetchAdData = async () => {
     photosToDeleteIds.value = [];
     newPhotoFiles.value = [];
     newPhotoPreviews.value = [];
-
   } catch (err) {
     initialError.value = "Не удалось загрузить данные объявления для редактирования.";
     console.error("Fetch ad data error:", err);
   }
-
-
-
 };
 
-onMounted(async () => {
-  loadingInitialData.value = true;
-  initialError.value = null;
-  try {
 
-    await fetchFilterOptionsAndBreeds();
-
-    if (adId.value) {
-      await fetchAdData();
-    }
-  } catch (err) {
-
-    if (!initialError.value) {
-      initialError.value = "Ошибка при инициализации формы.";
-    }
-  } finally {
-    loadingInitialData.value = false;
-  }
-});
-
-const selectedSpeciesChanged = async () => {
+const selectedSpeciesChanged = () => {
   formData.animal_data.breed = null;
-
-
-
-
-
-
-
-
-
-
 };
 
 const handlePhotoUpload = (event: Event) => {
@@ -354,7 +295,6 @@ const removeExistingPhoto = (photoId: number) => {
   }
 };
 
-
 const handleSubmit = async () => {
   submitting.value = true;
   submitError.value = null;
@@ -367,36 +307,21 @@ const handleSubmit = async () => {
   if (formData.latitude !== null) payload.append('latitude', String(formData.latitude));
   if (formData.longitude !== null) payload.append('longitude', String(formData.longitude));
 
-
-
-
-
-  if (formData.animal_data.name) payload.append('animal_data.name', formData.animal_data.name);
-  if (formData.animal_data.birth_date) payload.append('animal_data.birth_date', formData.animal_data.birth_date);
-  if (formData.animal_data.species) payload.append('animal_data.species', String(formData.animal_data.species));
-  if (formData.animal_data.breed) payload.append('animal_data.breed', String(formData.animal_data.breed));
-  if (formData.animal_data.color) payload.append('animal_data.color', String(formData.animal_data.color));
-  if (formData.animal_data.gender) payload.append('animal_data.gender', String(formData.animal_data.gender));
-
+  Object.entries(formData.animal_data).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+          payload.append(`animal_data.${key}`, String(value));
+      }
+  });
 
   newPhotoFiles.value.forEach(file => {
     payload.append('photos_upload', file, file.name);
   });
 
-
-
-
-
-
   try {
     let response;
     const headers = { 'Content-Type': 'multipart/form-data' };
-
     if (adId.value) {
-
-
       if (photosToDeleteIds.value.length > 0) {
-
         photosToDeleteIds.value.forEach(id => payload.append('delete_photos', String(id)));
       }
       response = await axios.patch<AdvertisementDetail>(`${API_BASE_URL}/advertisements/${adId.value}/`, payload, { headers });
@@ -427,14 +352,11 @@ const handleSubmit = async () => {
 const handleDeleteAd = async () => {
   if (!adId.value || !canDeleteCurrentAd.value) return;
   if (!confirm("Вы уверены, что хотите удалить это объявление? Это действие необратимо.")) return;
-
   deletingAd.value = true;
   submitError.value = null;
   try {
     await axios.delete(`${API_BASE_URL}/advertisements/${adId.value}/`);
-
     router.push({ name: 'Advertisements' });
-
   } catch (err) {
     if (axios.isAxiosError(err) && err.response) {
       submitError.value = err.response.data?.detail || `Ошибка удаления (${err.response.statusText || err.response.status}).`;
@@ -448,42 +370,36 @@ const handleDeleteAd = async () => {
 };
 
 onMounted(async () => {
-
-
-
-
-
   loadingInitialData.value = true;
-  await fetchFilterOptionsAndBreeds();
-  if (adId.value) {
-    await fetchAdData();
+  initialError.value = null;
+  try {
+    await fetchFilterOptionsAndBreeds();
+    if (adId.value) {
+      await fetchAdData();
+    }
+  } catch (err) {
+    if (!initialError.value) {
+      initialError.value = "Ошибка при инициализации формы.";
+    }
+  } finally {
+    loadingInitialData.value = false;
   }
-  loadingInitialData.value = false;
 });
-
-const inputFieldClass = "w-full p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 text-sm";
-const errorTextClass = "text-red-500 text-xs mt-1";
-
 const availableStatusesForCreate = computed(() => {
   if (adId.value) return filterOptions.value.ad_statuses;
-
-
   if (!authStore.user?.is_staff && !authStore.user?.role_permissions?.can_manage_any_advertisement) {
     const allowedNames = ["Потеряно", "Найдено", "Отдам в добрые руки"];
     return filterOptions.value.ad_statuses.filter(s => allowedNames.includes(s.name));
   }
   return filterOptions.value.ad_statuses;
 });
-
 </script>
 
 <style scoped>
 .input-field {
   @apply p-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 text-sm;
 }
-
 .error-text {
   @apply text-red-500 text-xs mt-1;
 }
-
 </style>

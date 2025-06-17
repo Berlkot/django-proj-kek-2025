@@ -1307,12 +1307,10 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
         allow_null=True,
         help_text=_("Регион")
     )
-    # Добавляем email
     email = serializers.EmailField(required=False, help_text=_("Email"))
 
     class Meta:
         model = User
-        # Добавляем 'email' в fields
         fields = ('email', 'display_name', 'first_name', 'last_name', 'phone_number', 'region', 'avatar')
         extra_kwargs = {
             'avatar': {'required': False, 'allow_null': True}
@@ -1356,6 +1354,6 @@ class UserAdminSerializer(serializers.ModelSerializer):
             'role_name',
             'region_name',
             'is_staff',
-            'is_active',  # Важное поле для отображения статуса
+            'is_active',
             'date_joined',
         )

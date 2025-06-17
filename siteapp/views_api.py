@@ -45,9 +45,9 @@ from .serializers import (
     BreedSerializer,
     RegionActivitySerializer,
     AdvertisementRatingSerializer,
-    RoleSerializer, 
+    RoleSerializer,
     ProfileSerializer,
-    ProfileUpdateSerializer, 
+    ProfileUpdateSerializer,
     AdminProfileUpdateSerializer,
     UserAdminSerializer
 )
@@ -187,37 +187,6 @@ class AdsPageNumberPagination(PageNumberPagination):
     max_page_size: int = 48
 
 
-class AdvertisementListAPIView(generics.ListAPIView):
-    """
-    Возвращает список объявлений.
-
-    list:
-    Возвращает список объявлений.
-    """
-    serializer_class = AdvertisementListSerializer
-    pagination_class = AdsPageNumberPagination
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_class = AdvertisementFilter
-    ordering_fields = ["publication_date", "animal__name"]
-    ordering = ["-publication_date"]
-
-    def get_queryset(self) -> QuerySet:
-        """
-        Возвращает QuerySet объявлений.
-        """
-        return (
-            Advertisement.objects.select_related(
-                "animal__species",
-                "animal__breed",
-                "animal__color",
-                "user__region",
-                "status",
-            )
-            .prefetch_related("photos")
-            .all()
-        )
-
-
 class FilterOptionsAPIView(APIView):
     """
     Возвращает списки возможных значений для фильтров.
@@ -333,7 +302,7 @@ class ArticleListCreateAPIView(generics.ListCreateAPIView):
     create:
     Создает новую статью.
     """
-    
+
     queryset: QuerySet = (
         Article.objects.select_related("author")
         .prefetch_related("categories")
@@ -507,11 +476,11 @@ class AdvertisementViewSet(viewsets.ModelViewSet):
     pagination_class: Type[PageNumberPagination] = AdsPageNumberPagination
     permission_classes: List[Type[BasePermission]] = [CanManageAdvertisements]
     parser_classes: List[Type[BaseParser]] = [parsers.MultiPartParser, parsers.FormParser, parsers.JSONParser]
-    
+
     def get_queryset(self) -> QuerySet[Advertisement]:
         """
         Возвращает набор данных объявлений с аннотациями по количеству комментариев и среднему рейтингу.
-        
+
         :return: Запрос с аннотациями.
         """
         queryset: QuerySet[Advertisement] = Advertisement.objects.annotate(
@@ -522,12 +491,12 @@ class AdvertisementViewSet(viewsets.ModelViewSet):
             'animal__species', 'animal__breed', 'animal__color',
             'user__region', 'user__role', 'status'
         ).prefetch_related(
-            'photos', 
+            'photos',
         ).order_by('-publication_date')
 
         if self.action == 'retrieve':
             queryset = queryset.prefetch_related('responses__user__role')
-        
+
         return queryset
 
     def get_serializer_class(self) -> Type[BaseSerializer]:
@@ -552,7 +521,7 @@ class BreedListAPIView(generics.ListAPIView):
     serializer_class: Type[BreedSerializer] = BreedSerializer
 
     permission_classes = [permissions.AllowAny]
-    
+
 class AdvertisementRatingViewSet(viewsets.ModelViewSet):
     """
     Endpoint для работы с оценками объявлений.
@@ -594,7 +563,7 @@ class AdvertisementRatingViewSet(viewsets.ModelViewSet):
 
         if AdvertisementRating.objects.filter(advertisement_id=advertisement_id, user=user).exists():
             raise ValidationError("Вы уже оставили оценку для этого объявления.")
-        
+
         serializer.save(user=user)
 
     def get_permissions(self) -> List[permissions.BasePermission]:
@@ -694,7 +663,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
         """
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        
+
         update_serializer = self.get_serializer(instance, data=request.data, partial=partial)
         update_serializer.is_valid(raise_exception=True)
         self.perform_update(update_serializer)
@@ -703,7 +672,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
             instance = self.get_object()
 
         view_serializer = ProfileSerializer(instance, context=self.get_serializer_context())
-        
+
         return Response(view_serializer.data)
 
     def retrieve(self, request, *args, **kwargs) -> Response:
@@ -730,7 +699,7 @@ class RoleListAPIView(generics.ListAPIView):
     queryset: QuerySet[Role] = Role.objects.all().order_by('name')
 
     serializer_class = RoleSerializer
-    permission_classes = [permissions.IsAdminUser] 
+    permission_classes = [permissions.IsAdminUser]
     pagination_class = None
 
 class AdminPageNumberPagination(PageNumberPagination):
@@ -745,26 +714,19 @@ class AdminPageNumberPagination(PageNumberPagination):
 class UserAdminViewSet(viewsets.ReadOnlyModelViewSet):
     """
     ViewSet для управления пользователями в админ-панели.
-    
+
     Доступно только для персонала (is_staff).
     Предоставляет список пользователей с поиском и фильтрацией.
-    
+
     Может быть использован для просмотра, поиска, фильтрации и сортировки пользователей.
     """
     queryset: QuerySet[User] = User.objects.all().select_related('role', 'region').order_by('-date_joined')
     serializer_class = UserAdminSerializer
-    permission_classes = [permissions.IsAdminUser] # Только для is_staff=True
+    permission_classes = [permissions.IsAdminUser]
     pagination_class = AdminPageNumberPagination
-    
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    
-    # Поля для поиска
-    search_fields = ['username', 'email', 'display_name', 'first_name', 'last_name']
-    
-    # Поля для фильтрации (можно расширить)
-    filterset_fields = ['is_active', 'is_staff', 'role', 'region']
 
-    # Поля для сортировки
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['username', 'email', 'display_name', 'first_name', 'last_name']
+    filterset_fields = ['is_active', 'is_staff', 'role', 'region']
     ordering_fields = ['date_joined', 'email', 'username']
     ordering = ['-date_joined']
-
