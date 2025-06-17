@@ -3,7 +3,7 @@ version: '3.8'
 services:
   web:
     build: .
-    user: root # Оставляем для разработки
+    user: root
     command: gunicorn animals.wsgi:application --bind 0.0.0.0:8000
     volumes:
       - static_volume:/app/staticfiles
@@ -12,16 +12,16 @@ services:
       - 8000
     env_file:
       - .env
-    depends_on: # Django не зависит от Redis напрямую при старте
+    depends_on:
       - redis
-    networks: # <-- ДОБАВИТЬ
+    networks:
       - animals_net
-    healthcheck: # <-- ДОБАВИТЬ СЕКЦИЮ HEALTHCHECK
+    healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8000/testing/health/"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 30s # Даем контейнеру время на запуск перед первыми проверками
+      start_period: 30s
 
   nginx:
     build: ./nginx
@@ -30,13 +30,12 @@ services:
     volumes:
       - static_volume:/app/staticfiles
       - media_volume:/app/media
-    networks: # <-- ДОБАВИТЬ
+    networks:
       - animals_net
     depends_on:
-      web: # <-- ИЗМЕНЕНИЕ: Ждем, пока web станет "healthy"
+      web:
         condition: service_healthy
 
-  # Сервис Redis (для Celery)
   redis:
     image: redis:7-alpine
     expose:
@@ -44,7 +43,6 @@ services:
     networks:
       - animals_net
 
-  # Сервис Celery Worker
   celery_worker:
     build: .
     command: celery -A animals worker -l info
@@ -55,7 +53,6 @@ services:
     networks:
       - animals_net
 
-  # Сервис Celery Beat (планировщик)
   celery_beat:
     build: .
     command: celery -A animals beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler

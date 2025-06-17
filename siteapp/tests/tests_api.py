@@ -3,12 +3,11 @@ from django.utils import timezone
 from django.urls import reverse
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
-from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
 
 from ..models import (
     User, Role, Region, Species, Breed, AdStatus,
-    Animal, Advertisement, AdResponse, AdvertisementRating
+    Animal, Advertisement, AdResponse
 )
 
 class ModelTests(TestCase):
