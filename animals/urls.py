@@ -10,8 +10,8 @@ urlpatterns = [
     path('api/social/', include('social_django.urls', namespace='social')),
     path('social-auth-success/', TemplateView.as_view(template_name="social_auth_success.html"), name="social_auth_success"), 
     path('api/', include('siteapp.urls')),
-    path('auth/', include('djoser.urls')),
-    path('auth/', include('djoser.urls.jwt')),
+    path('api/auth/', include('djoser.urls')),
+    path('api/auth/', include('djoser.urls.jwt')),
     path('testing/', include('siteapp.non_api_urls')),
 
     path('silk/', include('silk.urls', namespace='silk')),

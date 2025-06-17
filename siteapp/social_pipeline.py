@@ -39,8 +39,9 @@ def generate_jwt_and_redirect(backend, user, response, *args, **kwargs):
         # Это тот самый URL, который теперь будет обрабатывать Vue
         frontend_callback_url = f"{settings.FRONTEND_BASE_URL}social/auth/callback/"
         
-        # Собираем финальный URL
-        final_url = f"{frontend_callback_url}#access={access_token}&refresh={refresh_token}"
+
+        final_url = f"{frontend_callback_url}?access={access_token}&refresh={refresh_token}"
+        print(f"Redirecting to: {final_url}")
         
         return redirect(final_url)
 

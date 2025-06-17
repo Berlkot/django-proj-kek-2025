@@ -17,6 +17,9 @@ FRONTEND_BASE_URL = getattr(settings, "FRONTEND_BASE_URL", "http://localhost:517
 class Region(models.Model):
     """
     Представляет регион.
+
+    Attributes:
+        name: название региона, уникальное, максимум 100 символов.
     """
     name = models.CharField(_("название региона"), max_length=100, unique=True)
 
@@ -32,6 +35,21 @@ class Region(models.Model):
 class Role(models.Model):
     """
     Представляет роль пользователя и её права.
+
+    Attributes:
+        name: название роли, уникальное, максимум 50 символов.
+        can_create_article: может создавать статьи, логическое значение.
+        can_edit_own_article: может редактировать свои статьи, логическое значение.
+        can_edit_any_article: может редактировать любые статьи, логическое значение.
+        can_delete_own_article: может удалять свои статьи, логическое значение.
+        can_delete_any_article: может удалять любые статьи, логическое значение.
+        can_edit_own_comment: может редактировать свои комментарии, логическое значение.
+        can_delete_own_comment: может удалять свои комментарии, логическое значение.
+        can_delete_any_comment: может удалять любые комментарии (модерация), логическое значение.
+        can_create_advertisement: может создавать объявления, логическое значение.
+        can_edit_own_advertisement: может редактировать свои объявления, логическое значение.
+        can_delete_own_advertisement: может удалять свои объявления, логическое значение.
+        can_manage_any_advertisement: может управлять любыми объявлениями (модерация), логическое значение.
     """
     name = models.CharField(_("название роли"), max_length=50, unique=True)
     can_create_article = models.BooleanField(_("может создавать статьи"), default=False)
@@ -81,6 +99,15 @@ class Role(models.Model):
 class User(AbstractUser):
     """
     Пользовательская модель, расширяющая стандартную.
+
+    Attributes:
+        display_name: отображаемое имя, максимум 150 символов, необязательное поле.
+        email: уникальный email пользователя.
+        phone_number: номер телефона, должен соответствовать заданному формату, 
+                      максимум 20 символов, необязательное поле.
+        role: роль пользователя, связь с моделью Role, необязательное поле.
+        region: регион пользователя, связь с моделью Region, необязательное поле.
+        avatar: аватар пользователя, изображение, загружаемое в "user_avatars/", необязательное поле.
     """
     display_name = models.CharField(_("отображаемое имя"), max_length=150, blank=True)
     email = models.EmailField(_("email"), unique=True)
@@ -144,6 +171,9 @@ class User(AbstractUser):
 class AdStatus(models.Model):
     """
     Представляет статус объявления.
+
+    Fields:
+        name: название статуса, максимум 50 символов, уникальное поле.
     """
     name = models.CharField(_("название статуса"), max_length=50, unique=True)
 
@@ -159,6 +189,9 @@ class AdStatus(models.Model):
 class Species(models.Model):
     """
     Представляет вид животного.
+
+    Fields:
+        name: название вида, максимум 100 символов, уникальное поле.
     """
     name = models.CharField(_("название вида"), max_length=100, unique=True)
 
@@ -174,6 +207,10 @@ class Species(models.Model):
 class Breed(models.Model):
     """
     Представляет породу животного.
+
+    Attributes:
+        name: название породы, максимум 100 символов.
+        species: вид животного, связь с моделью Species, обязательное поле.
     """
     name = models.CharField(_("название породы"), max_length=100)
     species = models.ForeignKey(
@@ -193,6 +230,9 @@ class Breed(models.Model):
 class AnimalColor(models.Model):
     """
     Представляет окрас животного.
+
+    Fields:
+        name: название окраса, максимум 100 символов, уникальное поле.
     """
     name = models.CharField(_("название окраса"), max_length=100, unique=True)
 
@@ -208,6 +248,15 @@ class AnimalColor(models.Model):
 class Animal(models.Model):
     """
     Представляет животное.
+
+    Attributes:
+        name: имя/кличка, максимум 100 символов, может быть пустым.
+        birth_date: дата рождения, примерная, если точная неизвестна.
+        species: вид животного, обязательное поле.
+        breed: порода животного, может быть пустым.
+        color: окрас животного, может быть пустым.
+        gender: пол животного, варианты: 'Мальчик', 'Девочка', 'Не указан'.
+        shelters: приюты, в которых состоит, связь через модель `AnimalInShelter`.
     """
     GENDER_MALE = "M"
     GENDER_FEMALE = "F"
@@ -281,6 +330,14 @@ class Animal(models.Model):
 class Shelter(models.Model):
     """
     Представляет приют для животных.
+
+    Attributes:
+        name: название приюта, максимум 200 символов.
+        address: адрес приюта, максимум 255 символов.
+        contacts: контактные данные приюта, могут быть пустыми, но не более 255 символов.
+        region: регион, в котором находится приют, связь с моделью Region.
+        website: веб-сайт приюта, может быть пустым, но не более 300 символов.
+        animals: животные, которые находятся в приюте, связь с моделью Animal.
     """
     name = models.CharField(_("название приюта"), max_length=200)
     address = models.CharField(_("адрес"), max_length=255)
@@ -308,7 +365,7 @@ class AnimalInShelter(models.Model):
     """
     Представляет животное, которое находится в приюте.
 
-    Fields:
+    Attributes:
         animal: связь с моделью Animal, представляющей животное.
         shelter: связь с моделью Shelter, представляющей приют.
         date_admitted: дата, когда животное поступило в приют.
@@ -704,6 +761,12 @@ class Article(models.Model):
 class Comment(models.Model):
     """
     Модель комментария к статье.
+
+    Attributes:
+        article (ForeignKey): Article - статья, к которой оставлен комментарий.
+        user (ForeignKey): User - пользователь, оставивший комментарий.
+        text (TextField): текст комментария.
+        date_created (DateTimeField): дата и время создания комментария.
     """
 
     article = models.ForeignKey(

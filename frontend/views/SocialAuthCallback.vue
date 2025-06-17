@@ -14,19 +14,14 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const error = ref<string | null>(null)
 
 onMounted(async () => {
   try {
-    const hash = window.location.hash.substring(1)
-    if (!hash) {
-      throw new Error('Токены аутентификации не найдены.')
-    }
-
-    const params = new URLSearchParams(hash)
-    const accessToken = params.get('access')
-    const refreshToken = params.get('refresh')
+    const accessToken = route.query.access as string | null
+    const refreshToken = route.query.refresh as string | null
 
     if (!accessToken || !refreshToken) {
       throw new Error('Один или несколько токенов аутентификации отсутствуют.')
@@ -39,7 +34,7 @@ onMounted(async () => {
     await authStore.fetchUser()
 
     // Перенаправляем на главную страницу
-    router.push({ name: 'Home' })
+    router.replace({ name: 'Home' })
   } catch (e: any) {
     console.error('Social auth callback error:', e)
     error.value = e.message || 'Произошла неизвестная ошибка.'
