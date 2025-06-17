@@ -24,7 +24,7 @@ from .models import (
     Animal,
     AdvertisementRating,
     User,
-    Role
+    Role,
 )
 from .serializers import (
     HomePageAdSerializer,
@@ -49,7 +49,7 @@ from .serializers import (
     ProfileSerializer,
     ProfileUpdateSerializer,
     AdminProfileUpdateSerializer,
-    UserAdminSerializer
+    UserAdminSerializer,
 )
 
 from .filters import AdvertisementFilter, AGE_CHOICES
@@ -58,8 +58,9 @@ from .permissions import (
     CanManageArticles,
     CanManageAdvertisements,
     IsOwnerOrAdminOrReadOnly,
-    IsOwnerOrAdmin
+    IsOwnerOrAdmin,
 )
+
 
 class HomePageDataAPIView(APIView):
     """
@@ -101,31 +102,52 @@ class HomePageDataAPIView(APIView):
 
         try:
             active_status = AdStatus.objects.get(name="Активно")
-            region_activity = Advertisement.objects.filter(status=active_status, user__region__isnull=False) \
-                .values('user__region__id', 'user__region__name') \
-                .annotate(ad_count=Count('id', distinct=True)) \
-                .order_by('-ad_count')[:5]
-            top_regions = [{'region__id': r['user__region__id'], 'region__name': r['user__region__name'], 'ad_count': r['ad_count']} for r in region_activity]
+            region_activity = (
+                Advertisement.objects.filter(
+                    status=active_status, user__region__isnull=False
+                )
+                .values("user__region__id", "user__region__name")
+                .annotate(ad_count=Count("id", distinct=True))
+                .order_by("-ad_count")[:5]
+            )
+            top_regions = [
+                {
+                    "region__id": r["user__region__id"],
+                    "region__name": r["user__region__name"],
+                    "ad_count": r["ad_count"],
+                }
+                for r in region_activity
+            ]
 
         except AdStatus.DoesNotExist:
             print("WARNING: AdStatus 'Активно' not found for top regions widget.")
         except Exception as e:
             print(f"Error fetching top regions: {e}")
 
+        serializer_context = {"request": request}
 
-        serializer_context = {'request': request}
-
-        recent_ads_serializer = HomePageAdSerializer(recent_ads, many=True, context=serializer_context)
-        main_article_serializer = HomePageArticleSerializer(main_article_qs, many=True, context=serializer_context)
-        side_articles_serializer = HomePageArticleSerializer(side_articles_qs, many=True, context=serializer_context)
-        top_regions_serializer = RegionActivitySerializer(top_regions, many=True, context=serializer_context)
-
+        recent_ads_serializer = HomePageAdSerializer(
+            recent_ads, many=True, context=serializer_context
+        )
+        main_article_serializer = HomePageArticleSerializer(
+            main_article_qs, many=True, context=serializer_context
+        )
+        side_articles_serializer = HomePageArticleSerializer(
+            side_articles_qs, many=True, context=serializer_context
+        )
+        top_regions_serializer = RegionActivitySerializer(
+            top_regions, many=True, context=serializer_context
+        )
 
         data = {
-            'recent_ads': recent_ads_serializer.data,
-            'main_article': main_article_serializer.data[0] if main_article_serializer.data else None,
-            'side_articles': side_articles_serializer.data,
-            'top_regions': top_regions_serializer.data,  # <-- Новые данные
+            "recent_ads": recent_ads_serializer.data,
+            "main_article": (
+                main_article_serializer.data[0]
+                if main_article_serializer.data
+                else None
+            ),
+            "side_articles": side_articles_serializer.data,
+            "top_regions": top_regions_serializer.data,  # <-- Новые данные
         }
         return Response(data, status=status.HTTP_200_OK)
 
@@ -138,6 +160,7 @@ class StandardResultsSetPagination(PageNumberPagination):
         page_size (int): количество элементов на странице. Максимум - 30.
         page_size_query_param (str): параметр запроса для page_size. По умолчанию "page_size".
     """
+
     page_size: int = 9
     page_size_query_param: str = "page_size"
     max_page_size: int = 30
@@ -150,6 +173,7 @@ class ArticleListAPIView(generics.ListAPIView):
     Параметры:
         category (str): Слаг категории, по которой фильтровать статьи.
     """
+
     serializer_class = ArticleListSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = [filters.SearchFilter]
@@ -173,6 +197,7 @@ class ArticleCategoryListAPIView(generics.ListAPIView):
     """
     Возвращает список категорий статей.
     """
+
     queryset: QuerySet[ArticleCategory] = ArticleCategory.objects.all().order_by("name")
     serializer_class = ArticleCategorySerializer
     pagination_class = None
@@ -182,6 +207,7 @@ class AdsPageNumberPagination(PageNumberPagination):
     """
     Пагинатор для объявлений.
     """
+
     page_size: int = 12
     page_size_query_param: str = "page_size"
     max_page_size: int = 48
@@ -191,6 +217,7 @@ class FilterOptionsAPIView(APIView):
     """
     Возвращает списки возможных значений для фильтров.
     """
+
     def get(self, request, *args, **kwargs) -> Response:
         gender_options: List[Dict[str, str]] = [
             {"value": choice[0], "label": str(choice[1])}
@@ -206,7 +233,9 @@ class FilterOptionsAPIView(APIView):
             "age_categories": [
                 {"value": choice[0], "label": choice[1]} for choice in AGE_CHOICES
             ],
-            'breeds': BreedSerializer(Breed.objects.select_related('species').order_by('name'), many=True).data,
+            "breeds": BreedSerializer(
+                Breed.objects.select_related("species").order_by("name"), many=True
+            ).data,
         }
         return Response(data, status=status.HTTP_200_OK)
 
@@ -245,6 +274,7 @@ class AdResponseCreateAPIView(generics.CreateAPIView):
     permission_classes:
     IsAuthenticated - разрешает создание только авторизованным.
     """
+
     queryset: QuerySet[AdResponse] = AdResponse.objects.all()
     serializer_class = AdResponseSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -280,9 +310,10 @@ class AdResponseDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
     - изменение: только автору, администратору, модератору;
     - удаление: только автору, администратору, модератору.
     """
-    queryset: QuerySet[AdResponse] = (
-        AdResponse.objects.select_related("user", "user__role").all()
-    )
+
+    queryset: QuerySet[AdResponse] = AdResponse.objects.select_related(
+        "user", "user__role"
+    ).all()
     serializer_class = AdResponseSerializer
     permission_classes = [IsOwnerOrAdminOrModeratorForComment]
     lookup_url_kwarg = "response_id"
@@ -361,6 +392,7 @@ class ArticleRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView)
     destroy:
     Удаляет статью. Доступно только авторизованным пользователям, которые имеют права на удаление статей.
     """
+
     queryset = (
         Article.objects.select_related("author")
         .prefetch_related("categories", "comments__user")
@@ -385,8 +417,11 @@ class ArticleCommentListCreateAPIView(generics.ListCreateAPIView):
     create:
     Создает новый комментарий к статье. Доступно только авторизованным пользователям.
     """
+
     serializer_class: Type[CommentSerializer] = CommentSerializer
-    permission_classes: List[Type[permissions.BasePermission]] = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes: List[Type[permissions.BasePermission]] = [
+        permissions.IsAuthenticatedOrReadOnly
+    ]
 
     def get_queryset(self) -> QuerySet[Comment]:
         article_id: int = self.kwargs.get("article_id")
@@ -422,6 +457,7 @@ class ArticleCommentRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyA
     - изменение: только автору, администратору, модератору;
     - удаление: только автору, администратору, модератору.
     """
+
     serializer_class = CommentSerializer
     permission_classes = [IsOwnerOrAdminOrModeratorForComment]
     lookup_url_kwarg = "comment_id"
@@ -453,6 +489,7 @@ class AdvertisementViewSet(viewsets.ModelViewSet):
     destroy:
     Удаляет указанное объявление.
     """
+
     queryset: QuerySet[Advertisement] = (
         Advertisement.objects.select_related(
             "animal__species",
@@ -475,7 +512,11 @@ class AdvertisementViewSet(viewsets.ModelViewSet):
 
     pagination_class: Type[PageNumberPagination] = AdsPageNumberPagination
     permission_classes: List[Type[BasePermission]] = [CanManageAdvertisements]
-    parser_classes: List[Type[BaseParser]] = [parsers.MultiPartParser, parsers.FormParser, parsers.JSONParser]
+    parser_classes: List[Type[BaseParser]] = [
+        parsers.MultiPartParser,
+        parsers.FormParser,
+        parsers.JSONParser,
+    ]
 
     def get_queryset(self) -> QuerySet[Advertisement]:
         """
@@ -483,19 +524,28 @@ class AdvertisementViewSet(viewsets.ModelViewSet):
 
         :return: Запрос с аннотациями.
         """
-        queryset: QuerySet[Advertisement] = Advertisement.objects.annotate(
-            comments_count=Count('responses', distinct=True),
-            average_rating=Avg('ratings__rating'),
-            rating_count=Count('ratings', distinct=True)
-        ).select_related(
-            'animal__species', 'animal__breed', 'animal__color',
-            'user__region', 'user__role', 'status'
-        ).prefetch_related(
-            'photos',
-        ).order_by('-publication_date')
+        queryset: QuerySet[Advertisement] = (
+            Advertisement.objects.annotate(
+                comments_count=Count("responses", distinct=True),
+                average_rating=Avg("ratings__rating"),
+                rating_count=Count("ratings", distinct=True),
+            )
+            .select_related(
+                "animal__species",
+                "animal__breed",
+                "animal__color",
+                "user__region",
+                "user__role",
+                "status",
+            )
+            .prefetch_related(
+                "photos",
+            )
+            .order_by("-publication_date")
+        )
 
-        if self.action == 'retrieve':
-            queryset = queryset.prefetch_related('responses__user__role')
+        if self.action == "retrieve":
+            queryset = queryset.prefetch_related("responses__user__role")
 
         return queryset
 
@@ -517,10 +567,12 @@ class BreedListAPIView(generics.ListAPIView):
     Возвращает список пород.
 
     """
+
     queryset: QuerySet[Breed] = Breed.objects.select_related("species").all()
     serializer_class: Type[BreedSerializer] = BreedSerializer
 
     permission_classes = [permissions.AllowAny]
+
 
 class AdvertisementRatingViewSet(viewsets.ModelViewSet):
     """
@@ -544,11 +596,14 @@ class AdvertisementRatingViewSet(viewsets.ModelViewSet):
     destroy:
     Удаляет оценку указанного объявления.
     """
-    queryset: QuerySet[AdvertisementRating] = AdvertisementRating.objects.select_related('user', 'advertisement').all()
+
+    queryset: QuerySet[AdvertisementRating] = (
+        AdvertisementRating.objects.select_related("user", "advertisement").all()
+    )
     serializer_class = AdvertisementRatingSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['advertisement', 'user']
+    filterset_fields = ["advertisement", "user"]
     pagination_class = None
 
     def perform_create(self, serializer: AdvertisementRatingSerializer) -> None:
@@ -558,10 +613,12 @@ class AdvertisementRatingViewSet(viewsets.ModelViewSet):
         :param serializer: Сериализатор AdvertisementRatingSerializer с валидированными данными.
         :raises serializers.ValidationError: Если пользователь уже оставил оценку для данного объявления.
         """
-        advertisement_id: int = serializer.validated_data.get('advertisement').id
+        advertisement_id: int = serializer.validated_data.get("advertisement").id
         user = self.request.user
 
-        if AdvertisementRating.objects.filter(advertisement_id=advertisement_id, user=user).exists():
+        if AdvertisementRating.objects.filter(
+            advertisement_id=advertisement_id, user=user
+        ).exists():
             raise ValidationError("Вы уже оставили оценку для этого объявления.")
 
         serializer.save(user=user)
@@ -579,15 +636,16 @@ class AdvertisementRatingViewSet(viewsets.ModelViewSet):
         update, partial_update, destroy:
         Позволяет доступ владельцу или администратору.
         """
-        if self.action in ['list', 'retrieve']:
+        if self.action in ["list", "retrieve"]:
             permission_classes = [permissions.AllowAny]
-        elif self.action == 'create':
+        elif self.action == "create":
             permission_classes = [permissions.IsAuthenticated]
-        elif self.action in ['update', 'partial_update', 'destroy']:
+        elif self.action in ["update", "partial_update", "destroy"]:
             permission_classes = [IsOwnerOrAdminOrReadOnly]
         else:
             permission_classes = [permissions.IsAdminUser]
         return [permission() for permission in permission_classes]
+
 
 class ProfileViewSet(viewsets.ModelViewSet):
     """
@@ -608,9 +666,10 @@ class ProfileViewSet(viewsets.ModelViewSet):
     destroy:
     Удаляет профиль указанного пользователя.
     """
-    queryset = User.objects.all().select_related('region', 'role')
+
+    queryset = User.objects.all().select_related("region", "role")
     parser_classes = [parsers.MultiPartParser, parsers.FormParser, parsers.JSONParser]
-    lookup_field = 'id'
+    lookup_field = "id"
 
     def get_serializer_class(self) -> Type[ModelSerializer]:
         """
@@ -625,9 +684,9 @@ class ProfileViewSet(viewsets.ModelViewSet):
         partial_update:
         Частично обновляет профиль указанного пользователя.
         """
-        if self.action == 'retrieve':
+        if self.action == "retrieve":
             return ProfileSerializer
-        elif self.action in ['update', 'partial_update']:
+        elif self.action in ["update", "partial_update"]:
             if self.request.user.is_staff:
                 return AdminProfileUpdateSerializer
             return ProfileUpdateSerializer
@@ -646,11 +705,11 @@ class ProfileViewSet(viewsets.ModelViewSet):
         destroy:
         Позволяет доступ только администратору.
         """
-        if self.action == 'retrieve':
+        if self.action == "retrieve":
             permission_classes = [permissions.AllowAny]
-        elif self.action in ['update', 'partial_update']:
+        elif self.action in ["update", "partial_update"]:
             permission_classes = [IsOwnerOrAdmin]
-        elif self.action == 'destroy':
+        elif self.action == "destroy":
             permission_classes = [permissions.IsAdminUser]
         else:
             permission_classes = [permissions.IsAdminUser]
@@ -661,17 +720,21 @@ class ProfileViewSet(viewsets.ModelViewSet):
         Кастомный метод обновления.
         После успешного обновления возвращает полный профиль через ProfileSerializer.
         """
-        partial = kwargs.pop('partial', False)
+        partial = kwargs.pop("partial", False)
         instance = self.get_object()
 
-        update_serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        update_serializer = self.get_serializer(
+            instance, data=request.data, partial=partial
+        )
         update_serializer.is_valid(raise_exception=True)
         self.perform_update(update_serializer)
 
-        if getattr(instance, '_prefetched_objects_cache', None):
+        if getattr(instance, "_prefetched_objects_cache", None):
             instance = self.get_object()
 
-        view_serializer = ProfileSerializer(instance, context=self.get_serializer_context())
+        view_serializer = ProfileSerializer(
+            instance, context=self.get_serializer_context()
+        )
 
         return Response(view_serializer.data)
 
@@ -681,14 +744,16 @@ class ProfileViewSet(viewsets.ModelViewSet):
         """
         instance = self.get_object()
         user_serializer = self.get_serializer(instance)
-        user_ads = Advertisement.objects.filter(user=instance).select_related(
-            "animal__species", "status"
-        ).prefetch_related("photos").order_by('-publication_date')[:12]
-        ads_serializer = AdvertisementListSerializer(user_ads, many=True, context={'request': request})
-        data = {
-            'user': user_serializer.data,
-            'advertisements': ads_serializer.data
-        }
+        user_ads = (
+            Advertisement.objects.filter(user=instance)
+            .select_related("animal__species", "status")
+            .prefetch_related("photos")
+            .order_by("-publication_date")[:12]
+        )
+        ads_serializer = AdvertisementListSerializer(
+            user_ads, many=True, context={"request": request}
+        )
+        data = {"user": user_serializer.data, "advertisements": ads_serializer.data}
         return Response(data, status=status.HTTP_200_OK)
 
 
@@ -696,16 +761,19 @@ class RoleListAPIView(generics.ListAPIView):
     """
     Возвращает список всех ролей (названия и id).
     """
-    queryset: QuerySet[Role] = Role.objects.all().order_by('name')
+
+    queryset: QuerySet[Role] = Role.objects.all().order_by("name")
 
     serializer_class = RoleSerializer
     permission_classes = [permissions.IsAdminUser]
     pagination_class = None
 
+
 class AdminPageNumberPagination(PageNumberPagination):
     """
     Кастомная пагинация для административных API (например, UserAdminViewSet).
     """
+
     page_size: int = 15
     page_size_query_param: str = "page_size"
     max_page_size: int = 100
@@ -720,13 +788,20 @@ class UserAdminViewSet(viewsets.ReadOnlyModelViewSet):
 
     Может быть использован для просмотра, поиска, фильтрации и сортировки пользователей.
     """
-    queryset: QuerySet[User] = User.objects.all().select_related('role', 'region').order_by('-date_joined')
+
+    queryset: QuerySet[User] = (
+        User.objects.all().select_related("role", "region").order_by("-date_joined")
+    )
     serializer_class = UserAdminSerializer
     permission_classes = [permissions.IsAdminUser]
     pagination_class = AdminPageNumberPagination
 
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['username', 'email', 'display_name', 'first_name', 'last_name']
-    filterset_fields = ['is_active', 'is_staff', 'role', 'region']
-    ordering_fields = ['date_joined', 'email', 'username']
-    ordering = ['-date_joined']
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
+    search_fields = ["username", "email", "display_name", "first_name", "last_name"]
+    filterset_fields = ["is_active", "is_staff", "role", "region"]
+    ordering_fields = ["date_joined", "email", "username"]
+    ordering = ["-date_joined"]

@@ -27,18 +27,15 @@ onMounted(async () => {
       throw new Error('Один или несколько токенов аутентификации отсутствуют.')
     }
 
-    // Используем action из стора для установки токенов
     authStore.setTokens(accessToken, refreshToken)
 
-    // После установки токенов, нам нужно загрузить данные пользователя
     await authStore.fetchUser()
 
-    // Перенаправляем на главную страницу
     router.replace({ name: 'Home' })
   } catch (e: any) {
     console.error('Social auth callback error:', e)
     error.value = e.message || 'Произошла неизвестная ошибка.'
-    authStore.clearAuthData() // Чистим данные в случае ошибки
+    authStore.clearAuthData()
   }
 })
 </script>

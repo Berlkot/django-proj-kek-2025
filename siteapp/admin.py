@@ -24,7 +24,7 @@ from .models import (
     Volunteering,
     ArticleCategory,
     AnimalColor,
-    AdvertisementRating
+    AdvertisementRating,
 )
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
@@ -142,30 +142,48 @@ class RoleAdmin(admin.ModelAdmin):
         return ", ".join(perms) if perms else "Нет прав"
 
 
-@admin.action(description='Проверить/Показать ID активных объявлений пользователей')
+@admin.action(description="Проверить/Показать ID активных объявлений пользователей")
 def show_active_ad_ids_for_users(modeladmin, request, queryset):
     messages_to_user = []
     active_status = None
     try:
         active_status = AdStatus.objects.get(name="Активно")
     except AdStatus.DoesNotExist:
-        modeladmin.message_user(request, "Ошибка: Статус 'Активно' для объявлений не найден в базе данных.", level='error')
+        modeladmin.message_user(
+            request,
+            "Ошибка: Статус 'Активно' для объявлений не найден в базе данных.",
+            level="error",
+        )
         return
 
     for user in queryset:
-        user_has_active_ads = Advertisement.objects.filter(user=user, status=active_status).exists()
+        user_has_active_ads = Advertisement.objects.filter(
+            user=user, status=active_status
+        ).exists()
 
         if user_has_active_ads:
-            active_ad_ids = Advertisement.objects.filter(user=user, status=active_status) \
-                                             .values_list('id', flat=True) \
-                                             .order_by('-publication_date')[:5]
+            active_ad_ids = (
+                Advertisement.objects.filter(user=user, status=active_status)
+                .values_list("id", flat=True)
+                .order_by("-publication_date")[:5]
+            )
 
             ids_str = ", ".join(map(str, active_ad_ids))
-            if len(active_ad_ids) == 5 and Advertisement.objects.filter(user=user, status=active_status).count() > 5:
+            if (
+                len(active_ad_ids) == 5
+                and Advertisement.objects.filter(
+                    user=user, status=active_status
+                ).count()
+                > 5
+            ):
                 ids_str += ", ..."
-            messages_to_user.append(f"Пользователь {user.email}: есть активные объявления (ID: {ids_str}).")
+            messages_to_user.append(
+                f"Пользователь {user.email}: есть активные объявления (ID: {ids_str})."
+            )
         else:
-            messages_to_user.append(f"Пользователь {user.email}: нет активных объявлений.")
+            messages_to_user.append(
+                f"Пользователь {user.email}: нет активных объявлений."
+            )
 
     if not messages_to_user:
         modeladmin.message_user(request, "Не выбраны пользователи.")
@@ -330,7 +348,14 @@ class AnimalInShelterForShelterInline(admin.TabularInline):
 
 @admin.register(Shelter)
 class ShelterAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'region', 'address', 'website_link', 'get_animals_count')
+    list_display = (
+        "id",
+        "name",
+        "region",
+        "address",
+        "website_link",
+        "get_animals_count",
+    )
     list_filter = ("region",)
     search_fields = ("name", "address", "region__name", "website")
     raw_id_fields = ("region",)
@@ -345,11 +370,13 @@ class ShelterAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
         queryset = queryset.annotate(
-            _animals_count_annotated=Count('animalinshelter', distinct=True)
+            _animals_count_annotated=Count("animalinshelter", distinct=True)
         )
         return queryset
 
-    @admin.display(description=_("Кол-во животных"), ordering='_animals_count_annotated')
+    @admin.display(
+        description=_("Кол-во животных"), ordering="_animals_count_annotated"
+    )
     def get_animals_count(self, obj):
         return obj._animals_count_annotated
 
@@ -560,20 +587,22 @@ class AdvertisementAdmin(admin.ModelAdmin):
 
         return obj.user.region.name if obj.user.region else _("Не указан")
 
+
 @admin.register(AdvertisementRating)
 class AdvertisementRatingAdmin(admin.ModelAdmin):
-    list_display = ('advertisement_title', 'user_email', 'rating', 'created_at')
-    list_filter = ('rating', 'created_at')
-    search_fields = ('advertisement__title', 'user__email', 'user__username')
-    raw_id_fields = ('advertisement', 'user')
+    list_display = ("advertisement_title", "user_email", "rating", "created_at")
+    list_filter = ("rating", "created_at")
+    search_fields = ("advertisement__title", "user__email", "user__username")
+    raw_id_fields = ("advertisement", "user")
 
-    @admin.display(description="Объявление", ordering='advertisement__title')
+    @admin.display(description="Объявление", ordering="advertisement__title")
     def advertisement_title(self, obj):
         return obj.advertisement.title
 
-    @admin.display(description="Email пользователя", ordering='user__email')
+    @admin.display(description="Email пользователя", ordering="user__email")
     def user_email(self, obj):
         return obj.user.email
+
 
 @admin.register(AdPhoto)
 class AdPhotoAdmin(admin.ModelAdmin):
@@ -651,7 +680,15 @@ class ArticleCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Article)
 class ArticleAdmin(admin.ModelAdmin):
-    list_display = ('id', 'title', 'author_email', 'publication_date_formatted', 'get_comments_count', 'image_preview_list', 'list_categories')
+    list_display = (
+        "id",
+        "title",
+        "author_email",
+        "publication_date_formatted",
+        "get_comments_count",
+        "image_preview_list",
+        "list_categories",
+    )
     list_filter = ("publication_date", "author", "categories")
     search_fields = ("title", "content", "author__email", "author__username")
     raw_id_fields = ("author",)
@@ -673,10 +710,9 @@ class ArticleAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
         queryset = queryset.annotate(
-            _comments_count_annotated=Count('comments', distinct=True)
+            _comments_count_annotated=Count("comments", distinct=True)
         )
         return queryset
-
 
     @admin.display(description=_("Категории"))
     def list_categories(self, obj):
@@ -690,7 +726,9 @@ class ArticleAdmin(admin.ModelAdmin):
     def publication_date_formatted(self, obj):
         return obj.publication_date.strftime("%d.%m.%Y %H:%M")
 
-    @admin.display(description=_("Кол-во комментариев"), ordering='_comments_count_annotated')
+    @admin.display(
+        description=_("Кол-во комментариев"), ordering="_comments_count_annotated"
+    )
     def get_comments_count(self, obj):
         return obj._comments_count_annotated
 

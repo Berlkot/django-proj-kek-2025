@@ -14,6 +14,7 @@ AGE_CHOICES = [
     ("unknown", "Возраст неизвестен"),
 ]
 
+
 class AdvertisementFilter(django_filters.FilterSet):
     """
     Фильтр для объявлений, позволяющий фильтровать по региону, статусу объявления, виду, породе,
@@ -47,30 +48,38 @@ class AdvertisementFilter(django_filters.FilterSet):
     search = django_filters.CharFilter(method="global_search", label="Поиск")
 
     breed = django_filters.ModelChoiceFilter(
-        field_name='animal__breed',
-        queryset=Breed.objects.all(),
-        label='Порода'
+        field_name="animal__breed", queryset=Breed.objects.all(), label="Порода"
     )
 
     publication_date_after = django_filters.DateFilter(
-        field_name='publication_date',
-        lookup_expr='date__gte',
-        label='Опубликовано после (YYYY-MM-DD)'
+        field_name="publication_date",
+        lookup_expr="date__gte",
+        label="Опубликовано после (YYYY-MM-DD)",
     )
     publication_date_before = django_filters.DateFilter(
-        field_name='publication_date',
-        lookup_expr='date__lte',
-        label='Опубликовано до (YYYY-MM-DD)'
+        field_name="publication_date",
+        lookup_expr="date__lte",
+        label="Опубликовано до (YYYY-MM-DD)",
     )
 
     class Meta:
         model = Advertisement
         fields = [
-            'region', 'ad_status', 'species', 'breed', 'gender', 'color',
-            'age_category', 'search', 'publication_date_after', 'publication_date_before'
+            "region",
+            "ad_status",
+            "species",
+            "breed",
+            "gender",
+            "color",
+            "age_category",
+            "search",
+            "publication_date_after",
+            "publication_date_before",
         ]
 
-    def filter_by_age_category(self, queryset: QuerySet, name: str, value: str) -> QuerySet:
+    def filter_by_age_category(
+        self, queryset: QuerySet, name: str, value: str
+    ) -> QuerySet:
         """
         Фильтрует объявления по возрастной категории животного.
 

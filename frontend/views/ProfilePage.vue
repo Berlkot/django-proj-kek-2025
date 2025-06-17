@@ -16,7 +16,6 @@
     <div v-else-if="profileData" class="profile-page">
       <div class="container mx-auto px-4 py-8 md:py-12">
         <div class="bg-white p-6 md:p-8 rounded-lg shadow-md mb-8">
-          <!-- Profile Header -->
           <div
             class="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left"
           >
@@ -61,7 +60,6 @@
                 <span>Зарегистрирован: {{ formatDate(profileData.user.date_joined) }}</span>
               </div>
 
-              <!-- Edit Mode: Name Inputs -->
               <div v-if="isEditMode" class="space-y-3">
                 <input
                   type="text"
@@ -126,7 +124,6 @@
             </div>
           </div>
 
-          <!-- Contact and Admin section -->
           <div class="mt-6 border-t pt-6">
             <div v-if="!isEditMode" class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
@@ -211,7 +208,6 @@
                 </div>
               </div>
             </div>
-            <!-- ИЗМЕНЯЕМ ОБЩУЮ ОШИБКУ -->
             <p v-if="submitError" class="text-red-500 text-sm mt-4 bg-red-50 p-3 rounded-md">
               {{ submitError }}
             </p>
@@ -224,7 +220,6 @@
           </div>
         </div>
 
-        <!-- User's Advertisements -->
         <div>
           <h2 class="text-2xl font-bold text-gray-800 mb-6">
             Объявления пользователя ({{ profileData.advertisements.length }})
@@ -298,12 +293,10 @@ const formData = reactive<ProfileFormData>(defaultFormData())
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
 
-// --- Computed Properties ---
 const isOwner = computed(() => authStore.user?.id === profileData.value?.user.id)
 const isAdmin = computed(() => authStore.user?.is_staff || false)
 const canEdit = computed(() => isOwner.value || isAdmin.value)
 
-// --- Data Fetching ---
 const fetchProfile = async () => {
   loading.value = true
   error.value = null
@@ -325,7 +318,7 @@ const fetchAdminData = async () => {
   try {
     const [rolesRes, regionsRes] = await Promise.all([
       axios.get<Role[]>(`${API_BASE_URL}/roles/`),
-      axios.get<any>(`${API_BASE_URL}/filter-options/`), // Получаем регионы отсюда
+      axios.get<any>(`${API_BASE_URL}/filter-options/`),
     ])
     roles.value = rolesRes.data
     regions.value = regionsRes.data.regions
@@ -339,7 +332,6 @@ onMounted(() => {
   fetchAdminData()
 })
 
-// --- Edit Mode Logic ---
 const enterEditMode = () => {
   if (!profileData.value) return
   const user = profileData.value.user
@@ -363,7 +355,6 @@ const enterEditMode = () => {
 const cancelEditMode = () => {
   isEditMode.value = false
   imagePreviewUrl.value = null
-  // Reset form data if needed
   Object.assign(formData, defaultFormData())
 }
 
@@ -376,15 +367,13 @@ const handleAvatarChange = (event: Event) => {
   }
 }
 
-// --- API Actions ---
 const handleProfileUpdate = async () => {
   if (!canEdit.value) return
   submitting.value = true
   submitError.value = null
-  formErrors.value = {} // Сбрасываем ошибки полей перед каждым запросом
+  formErrors.value = {}
 
   const data = new FormData()
-  // ... (логика сборки FormData остается прежней)
   data.append('display_name', formData.display_name)
   data.append('first_name', formData.first_name)
   data.append('last_name', formData.last_name)
@@ -427,11 +416,9 @@ const handleProfileUpdate = async () => {
 
     if (axios.isAxiosError(err) && err.response?.data) {
       const errors = err.response.data
-      // Проверяем, является ли объект ошибок объектом (для ошибок по полям)
       if (typeof errors === 'object' && !Array.isArray(errors)) {
         formErrors.value = errors
       } else {
-        // Иначе это общая ошибка
         submitError.value = Array.isArray(errors) ? errors.join(', ') : String(errors)
       }
     } else {

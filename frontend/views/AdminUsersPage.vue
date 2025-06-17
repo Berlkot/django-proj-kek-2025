@@ -6,61 +6,37 @@
         <div class="text-sm text-gray-600">Найдено: {{ totalUsersCount }}</div>
       </div>
 
-      <!-- Search and Filter Bar -->
       <div class="mb-6 bg-white p-4 rounded-lg shadow-sm">
         <div class="flex items-center">
-          <input
-            type="text"
-            v-model="searchQuery"
-            @keyup.enter="applySearch"
+          <input type="text" v-model="searchQuery" @keyup.enter="applySearch"
             placeholder="Поиск по email, имени, логину..."
-            class="w-full p-2 border border-gray-300 rounded-l-md focus:ring-green-500 focus:border-green-500"
-          />
-          <button
-            @click="applySearch"
-            class="bg-green-500 text-white px-5 py-2 rounded-r-md hover:bg-green-600"
-            aria-label="Поиск"
-          >
+            class="w-full p-2 border border-gray-300 rounded-l-md focus:ring-green-500 focus:border-green-500" />
+          <button @click="applySearch" class="bg-green-500 text-white px-5 py-2 rounded-r-md hover:bg-green-600"
+            aria-label="Поиск">
             <font-awesome-icon :icon="['fas', 'search']" />
           </button>
         </div>
       </div>
 
-      <!-- Users Table -->
       <div class="bg-white rounded-lg shadow-md overflow-x-auto">
         <div v-if="loading" class="p-8 text-center text-gray-500">Загрузка пользователей...</div>
         <div v-else-if="error" class="p-8 text-center text-red-500">{{ error }}</div>
         <table v-else-if="users.length > 0" class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 ID
               </th>
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Пользователь
               </th>
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Роль
               </th>
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Статус
               </th>
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Дата регистрации
               </th>
               <th scope="col" class="relative px-6 py-3">
@@ -81,18 +57,12 @@
                 {{ user.role_name || 'Нет роли' }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <span
-                  :class="
-                    user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  "
-                  class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
-                >
+                <span :class="user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  " class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
                   {{ user.is_active ? 'Активен' : 'Неактивен' }}
                 </span>
-                <span
-                  v-if="user.is_staff"
-                  class="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800"
-                >
+                <span v-if="user.is_staff"
+                  class="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800">
                   Админ
                 </span>
               </td>
@@ -100,10 +70,8 @@
                 {{ formatDate(user.date_joined) }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <router-link
-                  :to="{ name: 'Profile', params: { id: user.id } }"
-                  class="text-green-600 hover:text-green-900"
-                >
+                <router-link :to="{ name: 'Profile', params: { id: user.id } }"
+                  class="text-green-600 hover:text-green-900">
                   Редактировать
                 </router-link>
               </td>
@@ -113,38 +81,23 @@
         <div v-else class="p-8 text-center text-gray-500">Пользователи не найдены.</div>
       </div>
 
-      <!-- Pagination -->
       <div v-if="!loading && totalPages > 1" class="mt-6 flex justify-center">
-        <nav
-          class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
-          aria-label="Pagination"
-        >
-          <button
-            @click="changePage(currentPage - 1)"
-            :disabled="currentPage === 1"
-            class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-          >
+        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+          <button @click="changePage(currentPage - 1)" :disabled="currentPage === 1"
+            class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">
             Назад
           </button>
-          <button
-            v-for="page in paginationNumbers"
-            :key="page"
-            @click="changePage(page)"
-            :disabled="page === '...'"
+          <button v-for="page in paginationNumbers" :key="page" @click="changePage(page)" :disabled="page === '...'"
             :class="[
               'relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium',
               page === currentPage
                 ? 'z-10 bg-green-50 border-green-500 text-green-600'
                 : 'bg-white text-gray-700 hover:bg-gray-50',
-            ]"
-          >
+            ]">
             {{ page }}
           </button>
-          <button
-            @click="changePage(currentPage + 1)"
-            :disabled="currentPage === totalPages"
-            class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-          >
+          <button @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages"
+            class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">
             Вперед
           </button>
         </nav>

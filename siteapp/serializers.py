@@ -16,7 +16,7 @@ from .models import (
     ArticleCategory,
     Comment,
     Breed,
-    AdvertisementRating
+    AdvertisementRating,
 )
 from django.utils import timezone
 from dateutil.relativedelta import relativedelta
@@ -35,6 +35,7 @@ class CommentAuthorSerializer(serializers.ModelSerializer):
     - username: имя пользователя,
     - avatar_url: URL-адрес аватара пользователя
     """
+
     avatar_url = serializers.SerializerMethodField(
         method_name="get_absolute_avatar_url"
     )
@@ -71,6 +72,7 @@ class CommentSerializer(serializers.ModelSerializer):
     - text: текст комментария,
     - date_created: дата создания комментария.
     """
+
     user: CommentAuthorSerializer = CommentAuthorSerializer(read_only=True)
     date_created: datetime = serializers.DateTimeField(
         format="%Y-%m-%dT%H:%M:%S.%fZ", read_only=True
@@ -105,6 +107,7 @@ class MinimalUserSerializer(serializers.ModelSerializer):
     - display_name: отображаемое имя,
     - region: регион пользователя.
     """
+
     region = serializers.StringRelatedField()
 
     class Meta:
@@ -124,10 +127,13 @@ class HomePageAdSerializer(serializers.ModelSerializer):
     - publication_date: дата публикации объявления,
     - status_name: название статуса объявления.
     """
+
     first_photo_url: str | None = serializers.SerializerMethodField()
     location: str = serializers.SerializerMethodField()
     short_description: str = serializers.SerializerMethodField()
-    species_name: str = serializers.CharField(source="animal.species.name", read_only=True)
+    species_name: str = serializers.CharField(
+        source="animal.species.name", read_only=True
+    )
     publication_date: serializers.DateTimeField = serializers.DateTimeField(
         format="%Y-%m-%dT%H:%M:%S.%fZ", read_only=True
     )
@@ -191,6 +197,7 @@ class HomePageArticleSerializer(serializers.ModelSerializer):
     - author_name: отображаемое имя автора,
     - main_image_url: URL главного изображения.
     """
+
     author_name: str = serializers.CharField(
         source="author.display_name", allow_null=True, read_only=True
     )
@@ -211,9 +218,7 @@ class HomePageArticleSerializer(serializers.ModelSerializer):
     def get_excerpt(self, obj: Article) -> str:
         if obj.content:
             return (
-                (obj.content[:150] + "...")
-                if len(obj.content) > 150
-                else obj.content
+                (obj.content[:150] + "...") if len(obj.content) > 150 else obj.content
             )
         return ""
 
@@ -255,6 +260,7 @@ class ArticleListSerializer(serializers.ModelSerializer):
     - categories: список категорий, к которым относится статья,
     - comments_count: количество комментариев к статье.
     """
+
     author_name = serializers.CharField(
         source="author.display_name", allow_null=True, read_only=True
     )
@@ -303,6 +309,7 @@ class ArticleAuthorSerializer(serializers.ModelSerializer):
     - avatar_url: URL аватарки автора.
 
     """
+
     avatar_url: typing.Optional[str] = serializers.SerializerMethodField()
 
     class Meta:
@@ -336,9 +343,12 @@ class ArticleDetailSerializer(serializers.ModelSerializer):
     - categories: список категорий статьи (детали: ArticleCategory),
     - comments: список комментариев к статье (детали: Comment).
     """
+
     author: ArticleAuthorSerializer = ArticleAuthorSerializer(read_only=True)
     main_image_url: str = serializers.SerializerMethodField()
-    categories: typing.List[ArticleCategory] = ArticleCategorySerializer(many=True, read_only=True)
+    categories: typing.List[ArticleCategory] = ArticleCategorySerializer(
+        many=True, read_only=True
+    )
     comments: typing.List[Comment] = CommentSerializer(many=True, read_only=True)
 
     class Meta:
@@ -389,6 +399,7 @@ class AdListAnimalSerializer(serializers.ModelSerializer):
     - gender: пол животного,
     - birth_date: дата рождения животного.
     """
+
     species: serializers.StringRelatedField = serializers.StringRelatedField()
     breed: serializers.StringRelatedField = serializers.StringRelatedField()
     color: serializers.StringRelatedField = serializers.StringRelatedField()
@@ -398,7 +409,14 @@ class AdListAnimalSerializer(serializers.ModelSerializer):
 
     class Meta:
         model: type = Animal
-        fields: list[str] = ["name", "species", "breed", "color", "gender", "birth_date"]
+        fields: list[str] = [
+            "name",
+            "species",
+            "breed",
+            "color",
+            "gender",
+            "birth_date",
+        ]
 
 
 class AdListUserSerializer(serializers.ModelSerializer):
@@ -410,6 +428,7 @@ class AdListUserSerializer(serializers.ModelSerializer):
     - display_name: отображаемое имя,
     - region: регион пользователя.
     """
+
     region: serializers.StringRelatedField = serializers.StringRelatedField()
 
     class Meta:
@@ -433,19 +452,30 @@ class AdvertisementListSerializer(serializers.ModelSerializer):
     - average_rating: средний рейтинг,
     - rating_count: количество оценок.
     """
+
     animal: AdListAnimalSerializer = AdListAnimalSerializer(read_only=True)
     user: AdListUserSerializer = AdListUserSerializer(read_only=True)
     status: serializers.StringRelatedField = serializers.StringRelatedField()
-    first_photo_url: serializers.SerializerMethodField = serializers.SerializerMethodField()
+    first_photo_url: serializers.SerializerMethodField = (
+        serializers.SerializerMethodField()
+    )
     location: serializers.SerializerMethodField = serializers.SerializerMethodField()
 
     publication_date: serializers.DateTimeField = serializers.DateTimeField(
         format="%Y-%m-%dT%H:%M:%S.%fZ", read_only=True
     )
-    short_description: serializers.SerializerMethodField = serializers.SerializerMethodField()
-    comments_count: serializers.IntegerField = serializers.IntegerField(read_only=True, required=False)
-    average_rating: serializers.FloatField = serializers.FloatField(read_only=True, required=False)
-    rating_count: serializers.IntegerField = serializers.IntegerField(read_only=True, required=False)
+    short_description: serializers.SerializerMethodField = (
+        serializers.SerializerMethodField()
+    )
+    comments_count: serializers.IntegerField = serializers.IntegerField(
+        read_only=True, required=False
+    )
+    average_rating: serializers.FloatField = serializers.FloatField(
+        read_only=True, required=False
+    )
+    rating_count: serializers.IntegerField = serializers.IntegerField(
+        read_only=True, required=False
+    )
 
     class Meta:
         model: type = Advertisement
@@ -463,7 +493,7 @@ class AdvertisementListSerializer(serializers.ModelSerializer):
             "location",
             "comments_count",
             "average_rating",
-            "rating_count"
+            "rating_count",
         ]
 
     def get_first_photo_url(self, obj: Advertisement) -> str | None:
@@ -498,6 +528,7 @@ class RegionSerializer(serializers.ModelSerializer):
     - id - идентификатор,
     - name - название региона,
     """
+
     class Meta:
         model: Region = Region
         fields: tuple[str, ...] = ["id", "name"]
@@ -511,6 +542,7 @@ class SpeciesSerializer(serializers.ModelSerializer):
     - id - идентификатор,
     - name - название вида,
     """
+
     class Meta:
         model: Species = Species
         fields: tuple[str, ...] = ["id", "name"]
@@ -524,6 +556,7 @@ class AdStatusSerializer(serializers.ModelSerializer):
     - id - идентификатор,
     - name - название статуса,
     """
+
     class Meta:
         model = AdStatus
         fields: typing.List[str] = ["id", "name"]
@@ -556,6 +589,7 @@ class AdDetailAuthorSerializer(serializers.ModelSerializer):
     - avatar_url - URL-адрес аватара,
     - region - регион.
     """
+
     avatar_url: typing.Optional[str] = serializers.SerializerMethodField()
     role: str = serializers.StringRelatedField()
 
@@ -705,6 +739,7 @@ class AdResponseSerializer(serializers.ModelSerializer):
     :param date_created: дата создания отклика
     :type date_created: datetime
     """
+
     user = AdDetailAuthorSerializer(read_only=True)
     date_created = serializers.DateTimeField(
         format="%Y-%m-%dT%H:%M:%S.%fZ", read_only=True
@@ -719,6 +754,7 @@ class AdvertisementDetailSerializer(serializers.ModelSerializer):
     """
     Сериализатор для детального просмотра объявления.
     """
+
     animal = AdDetailAnimalSerializer(read_only=True)
     user = AdDetailAuthorSerializer(read_only=True)
     status = serializers.StringRelatedField()
@@ -729,7 +765,7 @@ class AdvertisementDetailSerializer(serializers.ModelSerializer):
         format="%Y-%m-%dT%H:%M:%S.%fZ", read_only=True
     )
     location = serializers.SerializerMethodField()
-    
+
     comments_count = serializers.IntegerField(read_only=True, required=False)
     average_rating = serializers.FloatField(read_only=True, required=False)
     rating_count = serializers.IntegerField(read_only=True, required=False)
@@ -779,7 +815,7 @@ class UserCreateSerializer(BaseUserCreateSerializer):
             "display_name",
             "first_name",
             "last_name",
-            'phone_number'
+            "phone_number",
         )
 
     def create(self, validated_data: typing.Dict[str, typing.Any]) -> User:
@@ -797,8 +833,8 @@ class UserCreateSerializer(BaseUserCreateSerializer):
         ):
             if validated_data.get("username"):
                 validated_data["display_name"] = validated_data.get("username")
-        if 'phone_number' in validated_data and not validated_data['phone_number']:
-            validated_data['phone_number'] = None
+        if "phone_number" in validated_data and not validated_data["phone_number"]:
+            validated_data["phone_number"] = None
 
         user = super().create(validated_data)
 
@@ -889,7 +925,10 @@ class CurrentUserSerializer(BaseUserSerializer):
     Сериализатор для текущего пользователя.
 
     """
-    avatar_url = serializers.SerializerMethodField(method_name='get_absolute_avatar_url')
+
+    avatar_url = serializers.SerializerMethodField(
+        method_name="get_absolute_avatar_url"
+    )
     role_name = serializers.CharField(
         source="role.name", read_only=True, allow_null=True
     )
@@ -932,7 +971,7 @@ class CurrentUserSerializer(BaseUserSerializer):
         :param obj: экземпляр User
         :return: URL-адрес аватара
         """
-        request = self.context.get('request')
+        request = self.context.get("request")
         relative_avatar_url = obj.avatar_url
 
         if relative_avatar_url and request:
@@ -998,13 +1037,22 @@ class AnimalNestedManageSerializer(serializers.ModelSerializer):
         queryset=Species.objects.all(), allow_null=False, label=_("Вид животного")
     )
     breed = serializers.PrimaryKeyRelatedField(
-        queryset=Breed.objects.all(), allow_null=True, required=False, label=_("Порода животного")
+        queryset=Breed.objects.all(),
+        allow_null=True,
+        required=False,
+        label=_("Порода животного"),
     )
     color = serializers.PrimaryKeyRelatedField(
-        queryset=AnimalColor.objects.all(), allow_null=True, required=False, label=_("Окрас животного")
+        queryset=AnimalColor.objects.all(),
+        allow_null=True,
+        required=False,
+        label=_("Окрас животного"),
     )
     gender = serializers.ChoiceField(
-        choices=Animal.GENDER_CHOICES, allow_null=True, required=False, label=_("Пол животного")
+        choices=Animal.GENDER_CHOICES,
+        allow_null=True,
+        required=False,
+        label=_("Пол животного"),
     )
 
     class Meta:
@@ -1015,15 +1063,18 @@ class AnimalNestedManageSerializer(serializers.ModelSerializer):
         """
         Проверяет, что выбранная порода соответствует выбранному виду.
         """
-        species = data.get('species')
-        breed = data.get('breed')
+        species = data.get("species")
+        breed = data.get("breed")
 
         if species and breed:
             if breed.species != species:
-                raise serializers.ValidationError({
-                    'breed': _("Выбранная порода '{breed_name}' не соответствует выбранному виду '{species_name}'.")
-                             .format(breed_name=breed.name, species_name=species.name)
-                })
+                raise serializers.ValidationError(
+                    {
+                        "breed": _(
+                            "Выбранная порода '{breed_name}' не соответствует выбранному виду '{species_name}'."
+                        ).format(breed_name=breed.name, species_name=species.name)
+                    }
+                )
         return data
 
 
@@ -1039,6 +1090,7 @@ class AdPhotoManageSerializer(serializers.ModelSerializer):
         model = AdPhoto
         fields: tuple[str, ...] = ["id", "image"]
 
+
 class AdvertisementManageSerializer(serializers.ModelSerializer):
     """
     Сериализатор для управления объявлениями.
@@ -1051,6 +1103,7 @@ class AdvertisementManageSerializer(serializers.ModelSerializer):
     longitude - долгота,
     animal_data - данные об животном (имя, дата рождения, вид, порода, цвет, пол).
     """
+
     animal_data = AnimalNestedManageSerializer(write_only=True)
     status = serializers.PrimaryKeyRelatedField(queryset=AdStatus.objects.all())
 
@@ -1075,35 +1128,52 @@ class AdvertisementManageSerializer(serializers.ModelSerializer):
         """
         user = self.context["request"].user
 
-        if self.instance and self.instance.user == user and not (user.is_staff or (user.role and user.role.can_manage_any_advertisement)):
+        if (
+            self.instance
+            and self.instance.user == user
+            and not (
+                user.is_staff or (user.role and user.role.can_manage_any_advertisement)
+            )
+        ):
             allowed_transitions = {
                 "Потеряно": ["Найдено", "В архиве"],
                 "Найдено": ["Передано владельцу", "В архиве"],
-
             }
-            if self.instance.status.name in allowed_transitions and value.name not in allowed_transitions[self.instance.status.name]:
-                raise serializers.ValidationError(f"Вы не можете изменить статус с '{self.instance.status.name}' на '{value.name}'.")
-            elif self.instance.status.name not in allowed_transitions and value.id != self.instance.status_id:
-                 raise serializers.ValidationError("Вы не можете изменить текущий статус объявления.")
+            if (
+                self.instance.status.name in allowed_transitions
+                and value.name not in allowed_transitions[self.instance.status.name]
+            ):
+                raise serializers.ValidationError(
+                    f"Вы не можете изменить статус с '{self.instance.status.name}' на '{value.name}'."
+                )
+            elif (
+                self.instance.status.name not in allowed_transitions
+                and value.id != self.instance.status_id
+            ):
+                raise serializers.ValidationError(
+                    "Вы не можете изменить текущий статус объявления."
+                )
 
         return value
-    
+
     def validate(self, data):
         """
         Общая валидация данных.
         """
-        user = self.context['request'].user
-        description = data.get('description')
-        latitude = data.get('latitude')
-        longitude = data.get('longitude')
+        user = self.context["request"].user
+        description = data.get("description")
+        latitude = data.get("latitude")
+        longitude = data.get("longitude")
 
         if not self.instance and description:
-            active_like_statuses = AdStatus.objects.filter(name__in=["Найдено", "Потеряно", "Требует модерации"])
-            
+            active_like_statuses = AdStatus.objects.filter(
+                name__in=["Найдено", "Потеряно", "Требует модерации"]
+            )
+
             queryset = Advertisement.objects.filter(
                 user=user,
                 description__iexact=description,
-                status__in=active_like_statuses
+                status__in=active_like_statuses,
             )
 
             if latitude is not None and longitude is not None:
@@ -1111,31 +1181,34 @@ class AdvertisementManageSerializer(serializers.ModelSerializer):
 
             if queryset.exists():
                 raise serializers.ValidationError(
-                    _("У вас уже есть активное объявление с похожим описанием. Пожалуйста, проверьте ваши существующие объявления.")
+                    _(
+                        "У вас уже есть активное объявление с похожим описанием. Пожалуйста, проверьте ваши существующие объявления."
+                    )
                 )
         return data
-
 
     def create(self, validated_data: dict) -> Advertisement:
         """
         Создает новое объявление.
         """
-        animal_data = validated_data.pop('animal_data')
+        animal_data = validated_data.pop("animal_data")
         animal = Animal.objects.create(**animal_data)
-        
-        validated_data['animal'] = animal
-        validated_data['user'] = self.context['request'].user
 
-        if 'status' not in validated_data or not validated_data.get('status'):
+        validated_data["animal"] = animal
+        validated_data["user"] = self.context["request"].user
+
+        if "status" not in validated_data or not validated_data.get("status"):
             try:
                 default_status_name = "Требует модерации"
                 default_status = AdStatus.objects.get(name=default_status_name)
-                validated_data['status'] = default_status
+                validated_data["status"] = default_status
             except AdStatus.DoesNotExist:
                 raise serializers.ValidationError(
-                    {"status": f"Ошибка конфигурации: статус по умолчанию '{default_status_name}' не найден."}
+                    {
+                        "status": f"Ошибка конфигурации: статус по умолчанию '{default_status_name}' не найден."
+                    }
                 )
-        
+
         advertisement = Advertisement.objects.create(**validated_data)
 
         uploaded_photos = self.context["request"].FILES.getlist("photos_upload")
@@ -1152,23 +1225,40 @@ class AdvertisementManageSerializer(serializers.ModelSerializer):
 
         animal_data = validated_data.pop("animal_data", None)
 
-        if animal_data: 
-            if "name" in animal_data: animal_instance.name = animal_data.pop("name", animal_instance.name)
-            if "birth_date" in animal_data: animal_instance.birth_date = animal_data.pop("birth_date", animal_instance.birth_date)
-            if "species" in animal_data: animal_instance.species = animal_data.pop("species", animal_instance.species)
-            if "breed" in animal_data: animal_instance.breed = animal_data.pop("breed", animal_instance.breed)
-            if "color" in animal_data: animal_instance.color = animal_data.pop("color", animal_instance.color)
-            if "gender" in animal_data: animal_instance.gender = animal_data.pop("gender", animal_instance.gender)
+        if animal_data:
+            if "name" in animal_data:
+                animal_instance.name = animal_data.pop("name", animal_instance.name)
+            if "birth_date" in animal_data:
+                animal_instance.birth_date = animal_data.pop(
+                    "birth_date", animal_instance.birth_date
+                )
+            if "species" in animal_data:
+                animal_instance.species = animal_data.pop(
+                    "species", animal_instance.species
+                )
+            if "breed" in animal_data:
+                animal_instance.breed = animal_data.pop("breed", animal_instance.breed)
+            if "color" in animal_data:
+                animal_instance.color = animal_data.pop("color", animal_instance.color)
+            if "gender" in animal_data:
+                animal_instance.gender = animal_data.pop(
+                    "gender", animal_instance.gender
+                )
             animal_instance.save()
 
-        user = self.context['request'].user
-        if 'status' in validated_data and not (user.is_staff or (user.role and user.role.can_manage_any_advertisement)):
-            current_status_in_request = validated_data.get('status')
-            if current_status_in_request and current_status_in_request != instance.status:
-                 try:
+        user = self.context["request"].user
+        if "status" in validated_data and not (
+            user.is_staff or (user.role and user.role.can_manage_any_advertisement)
+        ):
+            current_status_in_request = validated_data.get("status")
+            if (
+                current_status_in_request
+                and current_status_in_request != instance.status
+            ):
+                try:
                     self.validate_status(current_status_in_request)
-                 except serializers.ValidationError:
-                    validated_data.pop('status')
+                except serializers.ValidationError:
+                    validated_data.pop("status")
 
         instance = super().update(instance, validated_data)
 
@@ -1193,7 +1283,9 @@ class BreedSerializer(serializers.ModelSerializer):
     species_id - идентификатор вида животного.
     """
 
-    species_id = serializers.IntegerField(source='species.id', help_text="Идентификатор вида животного")
+    species_id = serializers.IntegerField(
+        source="species.id", help_text="Идентификатор вида животного"
+    )
 
     class Meta:
         model = Breed
@@ -1208,8 +1300,9 @@ class RegionActivitySerializer(serializers.Serializer):
     name - название региона,
     ad_count - количество объявлений в регионе.
     """
-    id: int = serializers.IntegerField(source='region__id')
-    name: str = serializers.CharField(source='region__name')
+
+    id: int = serializers.IntegerField(source="region__id")
+    name: str = serializers.CharField(source="region__name")
     ad_count: int = serializers.IntegerField()
 
 
@@ -1223,12 +1316,13 @@ class AdvertisementRatingSerializer(serializers.ModelSerializer):
     rating - оценка,
     created_at - дата оценки.
     """
+
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
         model = AdvertisementRating
-        fields = ['id', 'advertisement', 'user', 'rating', 'created_at']
-        read_only_fields = ['id', 'created_at', 'user']
+        fields = ["id", "advertisement", "user", "rating", "created_at"]
+        read_only_fields = ["id", "created_at", "user"]
 
     def validate(self, data: dict) -> dict:
         """
@@ -1237,11 +1331,16 @@ class AdvertisementRatingSerializer(serializers.ModelSerializer):
         :raises serializers.ValidationError: если пользователь уже оставил оценку для этого объявления.
         """
         if not self.instance:
-            request_user = self.context['request'].user
-            advertisement = data.get('advertisement')
-            if AdvertisementRating.objects.filter(advertisement=advertisement, user=request_user).exists():
-                raise serializers.ValidationError(_("Вы уже оставили оценку для этого объявления."))
+            request_user = self.context["request"].user
+            advertisement = data.get("advertisement")
+            if AdvertisementRating.objects.filter(
+                advertisement=advertisement, user=request_user
+            ).exists():
+                raise serializers.ValidationError(
+                    _("Вы уже оставили оценку для этого объявления.")
+                )
         return data
+
 
 class RoleSerializer(serializers.ModelSerializer):
     """
@@ -1250,9 +1349,10 @@ class RoleSerializer(serializers.ModelSerializer):
     id - идентификатор,
     name - название роли.
     """
+
     class Meta:
         model: Role = Role
-        fields: tuple = ('id', 'name')
+        fields: tuple = ("id", "name")
 
 
 class ProfileSerializer(serializers.ModelSerializer):
@@ -1272,17 +1372,33 @@ class ProfileSerializer(serializers.ModelSerializer):
     date_joined - дата регистрации,
     is_staff - является ли пользователь персоналом.
     """
-    avatar_url = serializers.SerializerMethodField(method_name='get_absolute_avatar_url')
-    role_name = serializers.CharField(source='role.name', read_only=True, allow_null=True)
-    region_name = serializers.CharField(source='region.name', read_only=True, allow_null=True)
+
+    avatar_url = serializers.SerializerMethodField(
+        method_name="get_absolute_avatar_url"
+    )
+    role_name = serializers.CharField(
+        source="role.name", read_only=True, allow_null=True
+    )
+    region_name = serializers.CharField(
+        source="region.name", read_only=True, allow_null=True
+    )
     date_joined = serializers.DateTimeField(format="%d %B %Y", read_only=True)
 
     class Meta:
         model = User
         fields = (
-            'id', 'email', 'username', 'display_name', 'first_name', 'last_name',
-            'avatar_url', 'role_name', 'region_name', 'phone_number', 'date_joined',
-            'is_staff'
+            "id",
+            "email",
+            "username",
+            "display_name",
+            "first_name",
+            "last_name",
+            "avatar_url",
+            "role_name",
+            "region_name",
+            "phone_number",
+            "date_joined",
+            "is_staff",
         )
 
     def get_absolute_avatar_url(self, obj: User) -> typing.Optional[str]:
@@ -1292,35 +1408,43 @@ class ProfileSerializer(serializers.ModelSerializer):
         :param obj: экземпляр User
         :return: URL-адрес аватара
         """
-        request = self.context.get('request')
-        if obj.avatar and hasattr(obj.avatar, 'url'):
+        request = self.context.get("request")
+        if obj.avatar and hasattr(obj.avatar, "url"):
             return request.build_absolute_uri(obj.avatar.url)
         return None
+
 
 class ProfileUpdateSerializer(serializers.ModelSerializer):
     """
     Сериализатор для обновления профиля.
     """
+
     region = serializers.PrimaryKeyRelatedField(
         queryset=Region.objects.all(),
         required=False,
         allow_null=True,
-        help_text=_("Регион")
+        help_text=_("Регион"),
     )
     email = serializers.EmailField(required=False, help_text=_("Email"))
 
     class Meta:
         model = User
-        fields = ('email', 'display_name', 'first_name', 'last_name', 'phone_number', 'region', 'avatar')
-        extra_kwargs = {
-            'avatar': {'required': False, 'allow_null': True}
-        }
-    
+        fields = (
+            "email",
+            "display_name",
+            "first_name",
+            "last_name",
+            "phone_number",
+            "region",
+            "avatar",
+        )
+        extra_kwargs = {"avatar": {"required": False, "allow_null": True}}
+
     def validate_phone_number(self, value: str) -> typing.Optional[str]:
         """
         Валидация телефона.
         """
-        if value == '':
+        if value == "":
             return None
         return value
 
@@ -1329,31 +1453,41 @@ class AdminProfileUpdateSerializer(ProfileUpdateSerializer):
     """
     Сериализатор для обновления профиля администратора.
     """
-    role = serializers.PrimaryKeyRelatedField(queryset=Role.objects.all(), required=False, allow_null=True)
+
+    role = serializers.PrimaryKeyRelatedField(
+        queryset=Role.objects.all(), required=False, allow_null=True
+    )
 
     class Meta(ProfileUpdateSerializer.Meta):
         """
         Метаданные для AdminProfileUpdateSerializer с дополнительными полями.
         """
-        fields = ProfileUpdateSerializer.Meta.fields + ('role', 'is_staff')
-        
+
+        fields = ProfileUpdateSerializer.Meta.fields + ("role", "is_staff")
+
+
 class UserAdminSerializer(serializers.ModelSerializer):
     """
     Сериализатор для списка пользователей в админ-панели.
     """
-    role_name = serializers.CharField(source='role.name', read_only=True, allow_null=True)
-    region_name = serializers.CharField(source='region.name', read_only=True, allow_null=True)
-    
+
+    role_name = serializers.CharField(
+        source="role.name", read_only=True, allow_null=True
+    )
+    region_name = serializers.CharField(
+        source="region.name", read_only=True, allow_null=True
+    )
+
     class Meta:
         model = User
         fields: tuple = (
-            'id',
-            'email',
-            'username',
-            'display_name',
-            'role_name',
-            'region_name',
-            'is_staff',
-            'is_active',
-            'date_joined',
+            "id",
+            "email",
+            "username",
+            "display_name",
+            "role_name",
+            "region_name",
+            "is_staff",
+            "is_active",
+            "date_joined",
         )

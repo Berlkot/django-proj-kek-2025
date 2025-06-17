@@ -119,4 +119,3 @@ class CustomUserAttributeSimilarityValidator(UserAttributeSimilarityValidator):
         return _(
             "Ваш пароль не должен быть слишком похож на другую вашу личную информацию."
         )
-

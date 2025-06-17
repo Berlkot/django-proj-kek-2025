@@ -11,7 +11,7 @@
         <div v-if="generalError" class="bg-red-50 border-l-4 border-red-400 p-3">
             <p class="text-sm text-red-700">{{ generalError }}</p>
         </div>
-        
+
         <div class="rounded-md shadow-sm -space-y-px">
           <div>
             <label for="email-address" class="sr-only">Email</label>
@@ -76,13 +76,12 @@
           <span class="px-2 bg-white text-gray-500">Или войдите через</span>
         </div>
       </div>
-      
+
       <div class="space-y-3">
         <button @click="redirectToProvider('google-oauth2')" class="w-full flex items-center justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
           <font-awesome-icon :icon="['fab', 'google']" class="h-5 w-5 mr-2"/>
           Войти через Google
         </button>
-        <!-- пошёл нахер vk -->
         <!-- <button @click="redirectToProvider('vk-oauth2')" class="w-full flex items-center justify-center py-2 px-4 border border-blue-600 rounded-md shadow-sm bg-blue-600 text-sm font-medium text-white hover:bg-blue-700">
           <font-awesome-icon :icon="['fab', 'vk']" class="mr-2 text-lg" />
           Войти через ВКонтакте
@@ -110,8 +109,7 @@ const authStore = useAuthStore();
 const router = useRouter();
 const route = useRoute();
 
-// Локальное состояние для ошибок полей и общих ошибок
-const formErrors = ref<Record<string, string[]>>({}); 
+const formErrors = ref<Record<string, string[]>>({});
 const generalError = ref<string | null>(null);
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
 
@@ -120,9 +118,9 @@ const redirectToProvider = (provider: 'google-oauth2' | 'vk-oauth2') => {
 }
 
 const handleLogin = async () => {
-  formErrors.value = {}; // Сброс ошибок полей
-  generalError.value = null; // Сброс общих ошибок
-  authStore.error = null; // Сброс общей ошибки в сторе
+  formErrors.value = {};
+  generalError.value = null;
+  authStore.error = null;
 
   const result = await authStore.login({ email: email.value, password: password.value });
 
@@ -131,17 +129,13 @@ const handleLogin = async () => {
     router.push(nextPath || { name: 'Home' });
   } else {
     if (result.errors) {
-      // Djoser для эндпоинта /jwt/create/ обычно возвращает ошибки в поле "detail" или "non_field_errors"
-      // но на всякий случай обрабатываем как объект
       if (typeof result.errors === 'object' && result.errors !== null) {
         if (result.errors.detail) {
           generalError.value = String(result.errors.detail);
         } else if (result.errors.non_field_errors && Array.isArray(result.errors.non_field_errors)) {
           generalError.value = result.errors.non_field_errors.join('; ');
         } else {
-          // Если есть ошибки по конкретным полям (маловероятно для стандартного JWT create, но возможно для кастомного)
           formErrors.value = result.errors as Record<string, string[]>;
-          // Попробуем сформировать общее сообщение, если есть ошибки по полям, но нет non_field_errors
           const fieldErrorMessages = Object.values(formErrors.value).flat();
           if (fieldErrorMessages.length > 0) {
             generalError.value = fieldErrorMessages.join('; ');

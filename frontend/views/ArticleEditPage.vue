@@ -5,27 +5,15 @@
     </h1>
 
     <div v-if="loadingInitialData" class="text-center text-gray-500 py-10">Загрузка данных...</div>
-    <div
-      v-else-if="initialError"
-      class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6"
-    >
+    <div v-else-if="initialError" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6">
       <p>Ошибка загрузки данных статьи: {{ initialError }}</p>
     </div>
 
-    <form
-      v-else
-      @submit.prevent="handleSubmit"
-      class="bg-white p-6 md:p-8 rounded-lg shadow-md space-y-6"
-    >
+    <form v-else @submit.prevent="handleSubmit" class="bg-white p-6 md:p-8 rounded-lg shadow-md space-y-6">
       <div>
         <label for="title" class="block text-sm font-medium text-gray-700 mb-1">Заголовок</label>
-        <input
-          type="text"
-          id="title"
-          v-model="formData.title"
-          required
-          class="w-full p-3 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
-        />
+        <input type="text" id="title" v-model="formData.title" required
+          class="w-full p-3 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" />
         <p v-if="formErrors.title" class="text-red-500 text-xs mt-1">
           {{ formErrors.title.join(', ') }}
         </p>
@@ -33,42 +21,23 @@
 
       <div>
         <label for="content" class="block text-sm font-medium text-gray-700 mb-1">Содержимое</label>
-        <textarea
-          id="content"
-          v-model="formData.content"
-          rows="15"
-          required
-          class="w-full p-3 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
-        ></textarea>
+        <textarea id="content" v-model="formData.content" rows="15" required
+          class="w-full p-3 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"></textarea>
         <p v-if="formErrors.content" class="text-red-500 text-xs mt-1">
           {{ formErrors.content.join(', ') }}
         </p>
       </div>
 
       <div>
-        <label for="main_image" class="block text-sm font-medium text-gray-700 mb-1"
-          >Главное изображение</label
-        >
-        <input
-          type="file"
-          id="main_image"
-          @change="handleImageUpload"
-          accept="image/*"
-          class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
-        />
+        <label for="main_image" class="block text-sm font-medium text-gray-700 mb-1">Главное изображение</label>
+        <input type="file" id="main_image" @change="handleImageUpload" accept="image/*"
+          class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100" />
         <div v-if="imagePreviewUrl || formData.main_image_url" class="mt-3">
           <p class="text-xs text-gray-500 mb-1">Текущее/новое изображение:</p>
-          <img
-            :src="imagePreviewUrl || formData.main_image_url"
-            alt="Превью изображения"
-            class="max-h-48 rounded border"
-          />
-          <button
-            v-if="formData.main_image_url || imagePreviewUrl"
-            type="button"
-            @click="removeImage"
-            class="mt-2 text-xs text-red-600 hover:text-red-800"
-          >
+          <img :src="imagePreviewUrl || formData.main_image_url" alt="Превью изображения"
+            class="max-h-48 rounded border" />
+          <button v-if="formData.main_image_url || imagePreviewUrl" type="button" @click="removeImage"
+            class="mt-2 text-xs text-red-600 hover:text-red-800">
             Удалить изображение
           </button>
         </div>
@@ -80,21 +49,13 @@
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Категории</label>
         <div v-if="loadingCategories" class="text-xs text-gray-500">Загрузка категорий...</div>
-        <div
-          v-else-if="categories.length > 0"
-          class="space-y-2 max-h-60 overflow-y-auto border p-3 rounded-md"
-        >
+        <div v-else-if="categories.length > 0" class="space-y-2 max-h-60 overflow-y-auto border p-3 rounded-md">
           <div v-for="category in categories" :key="category.id" class="flex items-center">
-            <input
-              type="checkbox"
-              :id="`category-${category.id}`"
-              :value="category.id"
-              v-model="formData.categories"
-              class="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
-            />
+            <input type="checkbox" :id="`category-${category.id}`" :value="category.id" v-model="formData.categories"
+              class="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500" />
             <label :for="`category-${category.id}`" class="ml-2 text-sm text-gray-700">{{
               category.name
-            }}</label>
+              }}</label>
           </div>
         </div>
         <p v-else class="text-xs text-gray-500">Категории не найдены.</p>
@@ -108,19 +69,12 @@
       </div>
 
       <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
-        <router-link
-          :to="
-            articleId ? { name: 'ArticleDetail', params: { id: articleId } } : { name: 'Articles' }
-          "
-          class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-        >
+        <router-link :to="articleId ? { name: 'ArticleDetail', params: { id: articleId } } : { name: 'Articles' }
+          " class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
           Отмена
         </router-link>
-        <button
-          type="submit"
-          :disabled="submitting"
-          class="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-        >
+        <button type="submit" :disabled="submitting"
+          class="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50">
           {{
             submitting
               ? articleId

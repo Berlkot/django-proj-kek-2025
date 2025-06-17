@@ -166,16 +166,17 @@ class IsOwnerOrAdminOrReadOnly(permissions.BasePermission):
     def has_object_permission(self, request: Type, view: Type, obj: Type) -> bool:
         if request.method in permissions.SAFE_METHODS:
             return True
-        if hasattr(obj, 'user'):
+        if hasattr(obj, "user"):
             return obj.user == request.user or request.user.is_staff
         return request.user.is_staff
-        
+
+
 class IsOwnerOrAdmin(permissions.BasePermission):
     """
     Разрешает доступ владельцу объекта или администратору.
     """
+
     def has_object_permission(self, request: Type, view: Type, obj: Type) -> bool:
         if request.method in permissions.SAFE_METHODS:
             return True
         return obj == request.user or request.user.is_staff
-

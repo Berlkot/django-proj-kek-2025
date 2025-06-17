@@ -113,7 +113,8 @@
           </div>
         </div>
       </fieldset>
-      <p v-if="formErrors.animal_data && formErrors.animal_data.length" class="error-text">{{ formErrors.animal_data.join(', ') }}</p>
+      <p v-if="formErrors.animal_data && formErrors.animal_data.length" class="error-text">{{
+        formErrors.animal_data.join(', ') }}</p>
 
 
       <fieldset class="border p-4 rounded-md mt-6">
@@ -243,14 +244,14 @@ const fetchAdData = async () => {
       const speciesObj = filterOptions.value.species.find(s => s.name === ad.animal.species);
       const speciesId = speciesObj ? speciesObj.id : null;
       formData.animal_data.species = speciesId;
-      
+
       await nextTick();
 
       if (speciesId && ad.animal.breed) {
-          const breedObj = availableBreeds.value.find(b => b.name === ad.animal.breed);
-          formData.animal_data.breed = breedObj ? breedObj.id : null;
+        const breedObj = availableBreeds.value.find(b => b.name === ad.animal.breed);
+        formData.animal_data.breed = breedObj ? breedObj.id : null;
       }
-      
+
       const colorObj = filterOptions.value.colors.find(c => c.name === ad.animal.color);
       formData.animal_data.color = colorObj ? colorObj.id : null;
       const genderOption = filterOptions.value.genders.find(g => g.label === ad.animal.gender);
@@ -308,9 +309,9 @@ const handleSubmit = async () => {
   if (formData.longitude !== null) payload.append('longitude', String(formData.longitude));
 
   Object.entries(formData.animal_data).forEach(([key, value]) => {
-      if (value !== null && value !== undefined) {
-          payload.append(`animal_data.${key}`, String(value));
-      }
+    if (value !== null && value !== undefined) {
+      payload.append(`animal_data.${key}`, String(value));
+    }
   });
 
   newPhotoFiles.value.forEach(file => {
@@ -399,6 +400,7 @@ const availableStatusesForCreate = computed(() => {
 .input-field {
   @apply p-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 text-sm;
 }
+
 .error-text {
   @apply text-red-500 text-xs mt-1;
 }

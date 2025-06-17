@@ -5,10 +5,8 @@
     </div>
     <div v-else-if="error" class="container mx-auto px-4 py-10 text-center">
       <p class="text-xl text-red-500 bg-red-100 p-6 rounded-lg shadow">Ошибка: {{ error }}</p>
-      <router-link
-        :to="{ name: 'Advertisements' }"
-        class="mt-6 inline-block bg-green-500 text-white px-6 py-3 rounded-md hover:bg-green-600"
-      >
+      <router-link :to="{ name: 'Advertisements' }"
+        class="mt-6 inline-block bg-green-500 text-white px-6 py-3 rounded-md hover:bg-green-600">
         Ко всем объявлениям
       </router-link>
     </div>
@@ -17,17 +15,13 @@
         <div class="container mx-auto px-4">
           <div class="flex justify-between items-start">
             <div class="text-sm text-gray-500 mb-3">
-              <router-link :to="{ name: 'Advertisements' }" class="hover:text-green-600"
-                >Объявления</router-link
-              >
+              <router-link :to="{ name: 'Advertisements' }" class="hover:text-green-600">Объявления</router-link>
               <span class="mx-1">»</span>
               <span class="truncate">{{ ad.title }}</span>
             </div>
             <div v-if="canEditCurrentAd" class="mt-1">
-              <router-link
-                :to="{ name: 'AdvertisementEdit', params: { id: ad.id } }"
-                class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 hover:underline bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-md"
-              >
+              <router-link :to="{ name: 'AdvertisementEdit', params: { id: ad.id } }"
+                class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 hover:underline bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-md">
                 <font-awesome-icon :icon="['fas', 'pencil-alt']" class="mr-1.5" />
                 Редактировать
               </router-link>
@@ -38,56 +32,38 @@
             <div class="flex flex-col sm:flex-row sm:items-center">
               <div class="flex items-center mb-3 sm:mb-0">
                 <div class="flex items-center space-x-1 mr-2">
-                  <button
-                    v-for="starValue in [1, 2, 3, 4, 5]"
-                    :key="`interactive-star-${starValue}`"
+                  <button v-for="starValue in [1, 2, 3, 4, 5]" :key="`interactive-star-${starValue}`"
                     @click="authStore.isAuthenticated ? setRating(starValue) : redirectToLogin()"
-                    @mouseover="hoverRating = starValue"
-                    @mouseleave="hoverRating = 0"
+                    @mouseover="hoverRating = starValue" @mouseleave="hoverRating = 0"
                     class="p-0.5 text-gray-300 hover:text-amber-400 focus:outline-none disabled:cursor-not-allowed"
                     :aria-label="`Поставить ${starValue} звезд`"
-                    :disabled="!authStore.isAuthenticated && !ad?.average_rating"
-                  >
-                    <font-awesome-icon
-                      :icon="['fas', 'star']"
-                      :class="getStarClass(starValue)"
-                      class="w-6 h-6 transition-colors"
-                    />
+                    :disabled="!authStore.isAuthenticated && !ad?.average_rating">
+                    <font-awesome-icon :icon="['fas', 'star']" :class="getStarClass(starValue)"
+                      class="w-6 h-6 transition-colors" />
                   </button>
                 </div>
                 <div class="text-sm text-gray-600">
-                  <span
-                    v-if="
-                      ad.average_rating !== null &&
-                      ad.average_rating !== undefined &&
-                      ad.rating_count &&
-                      ad.rating_count > 0
-                    "
-                  >
+                  <span v-if="
+                    ad.average_rating !== null &&
+                    ad.average_rating !== undefined &&
+                    ad.rating_count &&
+                    ad.rating_count > 0
+                  ">
                     {{ ad.average_rating.toFixed(1) }} ({{ ad.rating_count }}
                     {{ getRatingCountText(ad.rating_count) }})
                   </span>
                   <span v-else-if="!authStore.isAuthenticated">
-                    <router-link
-                      :to="{ name: 'Login', query: { next: route.fullPath } }"
-                      class="text-green-600 hover:underline"
-                      >Войдите</router-link
-                    >, чтобы оценить
+                    <router-link :to="{ name: 'Login', query: { next: route.fullPath } }"
+                      class="text-green-600 hover:underline">Войдите</router-link>, чтобы оценить
                   </span>
                   <span v-else-if="newRating === 0"> Оцените первым! </span>
                 </div>
               </div>
 
-              <div
-                v-if="authStore.isAuthenticated && (newRating > 0 || currentUserRating)"
-                class="ml-2 flex items-center space-x-2 mt-2 sm:mt-0"
-              >
-                <button
-                  v-if="newRating > 0"
-                  @click="submitOrUpdateRating"
-                  :disabled="ratingSubmitting"
-                  class="bg-green-500 hover:bg-green-600 text-white text-xs px-3 py-1.5 rounded-md disabled:opacity-50"
-                >
+              <div v-if="authStore.isAuthenticated && (newRating > 0 || currentUserRating)"
+                class="ml-2 flex items-center space-x-2 mt-2 sm:mt-0">
+                <button v-if="newRating > 0" @click="submitOrUpdateRating" :disabled="ratingSubmitting"
+                  class="bg-green-500 hover:bg-green-600 text-white text-xs px-3 py-1.5 rounded-md disabled:opacity-50">
                   {{
                     ratingSubmitting
                       ? 'Сохранение...'
@@ -98,22 +74,14 @@
                           : 'Отправить'
                   }}
                 </button>
-                <button
-                  v-if="currentUserRating && newRating === 0"
-                  @click="deleteRating"
-                  :disabled="ratingSubmitting"
-                  class="text-red-500 hover:text-red-700 text-xs hover:bg-red-50 px-2 py-1 rounded-md disabled:opacity-50"
-                >
+                <button v-if="currentUserRating && newRating === 0" @click="deleteRating" :disabled="ratingSubmitting"
+                  class="text-red-500 hover:text-red-700 text-xs hover:bg-red-50 px-2 py-1 rounded-md disabled:opacity-50">
                   Удалить оценку
                 </button>
-                <button
-                  v-if="
-                    newRating > 0 && currentUserRating && currentUserRating.rating !== newRating
-                  "
-                  @click="cancelNewRating"
-                  :disabled="ratingSubmitting"
-                  class="text-gray-500 hover:text-gray-700 text-xs hover:bg-gray-100 px-2 py-1 rounded-md"
-                >
+                <button v-if="
+                  newRating > 0 && currentUserRating && currentUserRating.rating !== newRating
+                " @click="cancelNewRating" :disabled="ratingSubmitting"
+                  class="text-gray-500 hover:text-gray-700 text-xs hover:bg-gray-100 px-2 py-1 rounded-md">
                   Отменить
                 </button>
               </div>
@@ -124,11 +92,8 @@
           </div>
           <div class="text-xs text-gray-500 flex items-center space-x-3">
             <span>Опубликовано: {{ formatTimeAgo(ad.publication_date) }}</span>
-            <span
-              v-if="ad.status"
-              class="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs"
-              >{{ ad.status }}</span
-            >
+            <span v-if="ad.status" class="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs">{{ ad.status
+              }}</span>
           </div>
         </div>
       </div>
@@ -141,22 +106,15 @@
             <div class="mt-6 md:mt-8">
               <div class="border-b border-gray-200 mb-2">
                 <nav class="-mb-px flex space-x-4 md:space-x-6" aria-label="Tabs">
-                  <button
-                    v-for="tab in tabs"
-                    :key="tab.name"
-                    @click="activeTab = tab.name"
-                    :class="[
-                      'whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm md:text-base',
-                      activeTab === tab.name
-                        ? 'border-green-500 text-green-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
-                    ]"
-                  >
+                  <button v-for="tab in tabs" :key="tab.name" @click="activeTab = tab.name" :class="[
+                    'whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm md:text-base',
+                    activeTab === tab.name
+                      ? 'border-green-500 text-green-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+                  ]">
                     {{ tab.label }}
-                    <span
-                      v-if="tab.name === 'comments' && ad.responses.length > 0"
-                      class="ml-1 text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded-full"
-                    >
+                    <span v-if="tab.name === 'comments' && ad.responses.length > 0"
+                      class="ml-1 text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded-full">
                       {{ ad.responses.length }}
                     </span>
                   </button>
@@ -189,16 +147,14 @@
                         <span class="font-medium">Окрас:</span> {{ ad.animal.color }}
                       </li>
                       <li v-if="ad.publication_date">
-                        <span class="font-medium"
-                          >Дата
+                        <span class="font-medium">Дата
                           {{
                             ad.status === 'Потеряно'
                               ? 'потери'
                               : ad.status === 'Найдено'
                                 ? 'находки'
                                 : 'публикации'
-                          }}:</span
-                        >
+                          }}:</span>
                         {{ formatDate(ad.publication_date) }}
                       </li>
                     </ul>
@@ -206,10 +162,8 @@
                 </div>
                 <div v-show="activeTab === 'map'">
                   <h2 class="text-xl font-semibold text-gray-800 mb-3">Местоположение на карте</h2>
-                  <div
-                    v-if="ad.latitude && ad.longitude"
-                    class="h-80 md:h-96 bg-gray-200 rounded-md flex items-center justify-center text-gray-500"
-                  >
+                  <div v-if="ad.latitude && ad.longitude"
+                    class="h-80 md:h-96 bg-gray-200 rounded-md flex items-center justify-center text-gray-500">
                     Карта (широта: {{ ad.latitude.toFixed(4) }}, долгота:
                     {{ ad.longitude.toFixed(4) }})
                     <p class="mt-2 text-xs">Интеграция карты в разработке.</p>
@@ -221,17 +175,11 @@
                     Комментарии ({{ ad.responses.length }})
                   </h2>
                   <div v-if="ad.responses.length > 0" class="space-y-4">
-                    <div
-                      v-for="response in ad.responses"
-                      :key="response.id"
-                      class="bg-white p-4 rounded-lg shadow-sm border relative group"
-                    >
+                    <div v-for="response in ad.responses" :key="response.id"
+                      class="bg-white p-4 rounded-lg shadow-sm border relative group">
                       <div class="flex items-start space-x-3">
-                        <img
-                          :src="response.user.avatar_url || '/images/avatar-placeholder.png'"
-                          alt="avatar"
-                          class="w-10 h-10 rounded-full object-cover"
-                        />
+                        <img :src="response.user.avatar_url || '/images/avatar-placeholder.png'" alt="avatar"
+                          class="w-10 h-10 rounded-full object-cover" />
                         <div>
                           <p class="font-semibold text-gray-800">
                             {{ response.user.display_name }}
@@ -241,23 +189,15 @@
                           </p>
 
                           <div v-if="editingCommentId === response.id">
-                            <textarea
-                              v-model="editingCommentText"
-                              rows="3"
-                              class="w-full p-2 border rounded-md focus:ring-green-500 focus:border-green-500 text-sm"
-                            ></textarea>
+                            <textarea v-model="editingCommentText" rows="3"
+                              class="w-full p-2 border rounded-md focus:ring-green-500 focus:border-green-500 text-sm"></textarea>
                             <div class="mt-2 space-x-2">
-                              <button
-                                @click="saveEditedComment(response.id)"
-                                :disabled="commentSubmitting"
-                                class="text-xs bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded disabled:opacity-50"
-                              >
+                              <button @click="saveEditedComment(response.id)" :disabled="commentSubmitting"
+                                class="text-xs bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded disabled:opacity-50">
                                 Сохранить
                               </button>
-                              <button
-                                @click="cancelEditComment"
-                                class="text-xs bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded"
-                              >
+                              <button @click="cancelEditComment"
+                                class="text-xs bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded">
                                 Отмена
                               </button>
                             </div>
@@ -272,35 +212,25 @@
                         </div>
                       </div>
 
-                      <div
-                        v-if="authStore.isAuthenticated && authStore.user"
-                        class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1"
-                      >
-                        <button
-                          v-if="
-                            authStore.user.id === response.user.id &&
-                            (authStore.user.role_permissions?.can_edit_own_comment ||
-                              authStore.user.is_staff)
-                          "
-                          @click="startEditComment(response)"
-                          title="Редактировать"
+                      <div v-if="authStore.isAuthenticated && authStore.user"
+                        class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
+                        <button v-if="
+                          authStore.user.id === response.user.id &&
+                          (authStore.user.role_permissions?.can_edit_own_comment ||
+                            authStore.user.is_staff)
+                        " @click="startEditComment(response)" title="Редактировать"
                           class="p-1.5 text-xs text-blue-500 hover:text-blue-700 bg-blue-100 hover:bg-blue-200 rounded"
-                          :disabled="editingCommentId !== null"
-                        >
+                          :disabled="editingCommentId !== null">
                           <font-awesome-icon :icon="['fas', 'pencil-alt']" />
                         </button>
-                        <button
-                          v-if="
-                            (authStore.user.id === response.user.id &&
-                              authStore.user.role_permissions?.can_delete_own_comment) ||
-                            authStore.user.is_staff ||
-                            authStore.user.role_permissions?.can_delete_any_comment
-                          "
-                          @click="deleteComment(response.id)"
-                          title="Удалить"
+                        <button v-if="
+                          (authStore.user.id === response.user.id &&
+                            authStore.user.role_permissions?.can_delete_own_comment) ||
+                          authStore.user.is_staff ||
+                          authStore.user.role_permissions?.can_delete_any_comment
+                        " @click="deleteComment(response.id)" title="Удалить"
                           class="p-1.5 text-xs text-red-500 hover:text-red-700 bg-red-100 hover:bg-red-200 rounded"
-                          :disabled="editingCommentId !== null"
-                        >
+                          :disabled="editingCommentId !== null">
                           <font-awesome-icon :icon="['fas', 'trash-alt']" />
                         </button>
                       </div>
@@ -311,17 +241,10 @@
                   <div class="mt-6 pt-4 border-t">
                     <h3 class="text-lg font-semibold mb-2">Оставить комментарий</h3>
                     <div v-if="authStore.isAuthenticated">
-                      <textarea
-                        v-model="newCommentMessage"
-                        rows="3"
-                        placeholder="Ваш комментарий..."
-                        class="w-full p-2 border rounded-md focus:ring-green-500 focus:border-green-500"
-                      ></textarea>
-                      <button
-                        @click="submitComment"
-                        :disabled="commentSubmitting || !newCommentMessage.trim()"
-                        class="mt-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md disabled:opacity-50"
-                      >
+                      <textarea v-model="newCommentMessage" rows="3" placeholder="Ваш комментарий..."
+                        class="w-full p-2 border rounded-md focus:ring-green-500 focus:border-green-500"></textarea>
+                      <button @click="submitComment" :disabled="commentSubmitting || !newCommentMessage.trim()"
+                        class="mt-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md disabled:opacity-50">
                         {{ commentSubmitting ? 'Отправка...' : 'Отправить' }}
                       </button>
                       <p v-if="commentError" class="text-red-500 text-sm mt-1">
@@ -331,17 +254,11 @@
                     <div v-else>
                       <p class="text-sm text-gray-600">
                         Чтобы оставить комментарий, пожалуйста,
-                        <router-link
-                          :to="{ name: 'Login', query: { next: route.fullPath } }"
-                          class="text-green-600 hover:underline"
-                          >войдите</router-link
-                        >
+                        <router-link :to="{ name: 'Login', query: { next: route.fullPath } }"
+                          class="text-green-600 hover:underline">войдите</router-link>
                         или
-                        <router-link
-                          :to="{ name: 'Register', query: { next: route.fullPath } }"
-                          class="text-green-600 hover:underline"
-                          >зарегистрируйтесь</router-link
-                        >.
+                        <router-link :to="{ name: 'Register', query: { next: route.fullPath } }"
+                          class="text-green-600 hover:underline">зарегистрируйтесь</router-link>.
                       </p>
                     </div>
                   </div>
@@ -353,11 +270,8 @@
           <div class="w-full lg:w-1/3">
             <div class="bg-white p-5 rounded-lg shadow sticky top-20">
               <div class="flex items-center mb-4">
-                <img
-                  :src="ad.user.avatar_url || '/static/images/no-image-data.png'"
-                  alt="avatar"
-                  class="w-16 h-16 rounded-full object-cover mr-4"
-                />
+                <img :src="ad.user.avatar_url || '/static/images/no-image-data.png'" alt="avatar"
+                  class="w-16 h-16 rounded-full object-cover mr-4" />
                 <div>
                   <h3 class="text-xl font-semibold text-gray-800">{{ ad.user.display_name }}</h3>
                   <p v-if="ad.user.role" class="text-sm text-gray-500">{{ ad.user.role }}</p>
@@ -365,41 +279,27 @@
               </div>
               <ul class="space-y-2 text-sm text-gray-700 mb-5">
                 <li v-if="ad.user.region?.name" class="flex items-center">
-                  <font-awesome-icon
-                    :icon="['fas', 'map-marker-alt']"
-                    class="w-4 h-4 mr-2 text-gray-400"
-                  />
+                  <font-awesome-icon :icon="['fas', 'map-marker-alt']" class="w-4 h-4 mr-2 text-gray-400" />
                   {{ ad.user.region.name }}
                 </li>
                 <li v-if="ad.user.phone_number" class="flex items-center">
                   <font-awesome-icon :icon="['fas', 'phone']" class="w-4 h-4 mr-2 text-gray-400" />
                   <a :href="`tel:${ad.user.phone_number}`" class="hover:text-green-600">{{
                     ad.user.phone_number
-                  }}</a>
+                    }}</a>
                 </li>
                 <li v-if="ad.user.email" class="flex items-center">
-                  <font-awesome-icon
-                    :icon="['fas', 'envelope']"
-                    class="w-4 h-4 mr-2 text-gray-400"
-                  />
-                  <a
-                    :href="`mailto:${ad.user.email}`"
-                    class="hover:text-green-600 truncate"
-                    :title="ad.user.email"
-                    >{{ ad.user.email }}</a
-                  >
+                  <font-awesome-icon :icon="['fas', 'envelope']" class="w-4 h-4 mr-2 text-gray-400" />
+                  <a :href="`mailto:${ad.user.email}`" class="hover:text-green-600 truncate" :title="ad.user.email">{{
+                    ad.user.email }}</a>
                 </li>
               </ul>
               <button
-                class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-md transition duration-150 mb-2"
-              >
+                class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-md transition duration-150 mb-2">
                 Написать автору
               </button>
-              <router-link
-                v-if="ad.user.id"
-                :to="`/profile/${ad.user.id}`"
-                class="block w-full text-center bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 px-4 rounded-md transition duration-150"
-              >
+              <router-link v-if="ad.user.id" :to="`/profile/${ad.user.id}`"
+                class="block w-full text-center bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 px-4 rounded-md transition duration-150">
                 Профиль автора
               </router-link>
             </div>

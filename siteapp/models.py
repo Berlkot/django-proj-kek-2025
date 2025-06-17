@@ -21,6 +21,7 @@ class Region(models.Model):
     Attributes:
         name: название региона, уникальное, максимум 100 символов.
     """
+
     name = models.CharField(_("название региона"), max_length=100, unique=True)
 
     class Meta:
@@ -51,6 +52,7 @@ class Role(models.Model):
         can_delete_own_advertisement: может удалять свои объявления, логическое значение.
         can_manage_any_advertisement: может управлять любыми объявлениями (модерация), логическое значение.
     """
+
     name = models.CharField(_("название роли"), max_length=50, unique=True)
     can_create_article = models.BooleanField(_("может создавать статьи"), default=False)
     can_edit_own_article = models.BooleanField(
@@ -109,18 +111,21 @@ class User(AbstractUser):
         region: регион пользователя, связь с моделью Region, необязательное поле.
         avatar: аватар пользователя, изображение, загружаемое в "user_avatars/", необязательное поле.
     """
+
     display_name = models.CharField(_("отображаемое имя"), max_length=150, blank=True)
     email = models.EmailField(_("email"), unique=True)
     phone_regex = RegexValidator(
-        regex=r'^\+?1?\d{9,15}$',
-        message=_("Номер телефона должен быть введен в формате: '+999999999'. До 15 цифр.")
+        regex=r"^\+?1?\d{9,15}$",
+        message=_(
+            "Номер телефона должен быть введен в формате: '+999999999'. До 15 цифр."
+        ),
     )
     phone_number = models.CharField(
         _("номер телефона"),
         validators=[phone_regex],
         max_length=20,
         blank=True,
-        null=True
+        null=True,
     )
 
     role = models.ForeignKey(
@@ -175,6 +180,7 @@ class AdStatus(models.Model):
     Fields:
         name: название статуса, максимум 50 символов, уникальное поле.
     """
+
     name = models.CharField(_("название статуса"), max_length=50, unique=True)
 
     class Meta:
@@ -193,6 +199,7 @@ class Species(models.Model):
     Fields:
         name: название вида, максимум 100 символов, уникальное поле.
     """
+
     name = models.CharField(_("название вида"), max_length=100, unique=True)
 
     class Meta:
@@ -212,6 +219,7 @@ class Breed(models.Model):
         name: название породы, максимум 100 символов.
         species: вид животного, связь с моделью Species, обязательное поле.
     """
+
     name = models.CharField(_("название породы"), max_length=100)
     species = models.ForeignKey(
         Species, on_delete=models.CASCADE, verbose_name=_("вид")
@@ -234,6 +242,7 @@ class AnimalColor(models.Model):
     Fields:
         name: название окраса, максимум 100 символов, уникальное поле.
     """
+
     name = models.CharField(_("название окраса"), max_length=100, unique=True)
 
     class Meta:
@@ -258,6 +267,7 @@ class Animal(models.Model):
         gender: пол животного, варианты: 'Мальчик', 'Девочка', 'Не указан'.
         shelters: приюты, в которых состоит, связь через модель `AnimalInShelter`.
     """
+
     GENDER_MALE = "M"
     GENDER_FEMALE = "F"
     GENDER_UNKNOWN = "U"
@@ -306,10 +316,10 @@ class Animal(models.Model):
         default=GENDER_UNKNOWN,
     )
     shelters = models.ManyToManyField(
-        'Shelter',
-        through='AnimalInShelter',
-        related_name='animals_in_shelter',
-        verbose_name=_("приюты, в которых состоит")
+        "Shelter",
+        through="AnimalInShelter",
+        related_name="animals_in_shelter",
+        verbose_name=_("приюты, в которых состоит"),
     )
 
     class Meta:
@@ -339,23 +349,28 @@ class Shelter(models.Model):
         website: веб-сайт приюта, может быть пустым, но не более 300 символов.
         animals: животные, которые находятся в приюте, связь с моделью Animal.
     """
+
     name = models.CharField(_("название приюта"), max_length=200)
     address = models.CharField(_("адрес"), max_length=255)
     contacts = models.TextField(_("контакты"), blank=True)
-    region = models.ForeignKey(Region, on_delete=models.PROTECT, verbose_name=_("регион"))
-    website = models.URLField(_("веб-сайт приюта"), max_length=300, blank=True, null=True)
+    region = models.ForeignKey(
+        Region, on_delete=models.PROTECT, verbose_name=_("регион")
+    )
+    website = models.URLField(
+        _("веб-сайт приюта"), max_length=300, blank=True, null=True
+    )
 
     animals = models.ManyToManyField(
         Animal,
-        through='AnimalInShelter',
+        through="AnimalInShelter",
         verbose_name=_("животные в приюте"),
-        blank=True
+        blank=True,
     )
 
     class Meta:
         verbose_name = _("приют")
         verbose_name_plural = _("приюты")
-        ordering = ['name']
+        ordering = ["name"]
 
     def __str__(self) -> str:
         return self.name
@@ -505,6 +520,7 @@ class Advertisement(models.Model):
         """
         return f"{FRONTEND_BASE_URL}advertisement/{self.pk}"
 
+
 class AdvertisementRating(models.Model):
     """
     Модель оценки объявления.
@@ -518,43 +534,45 @@ class AdvertisementRating(models.Model):
 
     advertisement = models.ForeignKey(
         Advertisement,
-        related_name='ratings',
+        related_name="ratings",
         on_delete=models.CASCADE,
         verbose_name=_("объявление"),
-        help_text=_("Объявление, которое было оценено.")
+        help_text=_("Объявление, которое было оценено."),
     )
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        related_name='ad_ratings_given',
+        related_name="ad_ratings_given",
         on_delete=models.CASCADE,
         verbose_name=_("пользователь"),
-        help_text=_("Пользователь, который оставил оценку.")
+        help_text=_("Пользователь, который оставил оценку."),
     )
     rating = models.PositiveSmallIntegerField(
         _("оценка"),
         validators=[MinValueValidator(1), MaxValueValidator(5)],
-        help_text=_("Оценка, которую пользователь оставил.")
+        help_text=_("Оценка, которую пользователь оставил."),
     )
     created_at = models.DateTimeField(
         _("дата оценки"),
         auto_now_add=True,
-        help_text=_("Дата, когда была оставлена оценка.")
+        help_text=_("Дата, когда была оставлена оценка."),
     )
 
     class Meta:
         """
         Метаданные модели.
         """
+
         verbose_name = _("оценка объявления")
         verbose_name_plural = _("оценки объявлений")
-        unique_together = ('advertisement', 'user')
-        ordering = ['-created_at']
+        unique_together = ("advertisement", "user")
+        ordering = ["-created_at"]
 
     def __str__(self) -> str:
         """
         Возвращает строковое представление объекта.
         """
         return f"{self.rating}* от {self.user.username} для {self.advertisement.title[:20]}..."
+
 
 class AdPhoto(models.Model):
     """
@@ -575,6 +593,7 @@ class AdPhoto(models.Model):
 
     class Meta:
         """Метаданные модели."""
+
         verbose_name = _("фото объявления")
         verbose_name_plural = _("фото объявлений")
         ordering = ["advertisement"]
@@ -621,6 +640,7 @@ class AdResponse(models.Model):
 
     class Meta:
         """Метаданные модели."""
+
         verbose_name = _("отклик на объявление")
         verbose_name_plural = _("отклики на объявления")
         ordering = ["-date_created"]
@@ -652,6 +672,7 @@ class ArticleCategory(models.Model):
 
     class Meta:
         """Метаданные модели."""
+
         verbose_name = _("категория статей")
         verbose_name_plural = _("категории статей")
         ordering = ["name"]
@@ -719,6 +740,7 @@ class Article(models.Model):
         """
         Метаданные модели.
         """
+
         verbose_name = _("статья")
         verbose_name_plural = _("статьи")
         ordering = ["-publication_date"]

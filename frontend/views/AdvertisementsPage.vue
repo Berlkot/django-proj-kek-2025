@@ -216,7 +216,7 @@ const updateRouteQuery = () => {
 const applySearch = () => {
   currentSearchQuery.value = searchQueryInput.value;
   currentPage.value = 1;
-  updateRouteQuery(); 
+  updateRouteQuery();
 };
 
 const applySorting = () => {
@@ -273,23 +273,23 @@ watch(
         newFiltersStateFromQuery[filterKey] = null;
       }
     }
-    
+
     if (currentPage.value !== newPage) currentPage.value = newPage;
     if (currentSearchQuery.value !== newSearch) currentSearchQuery.value = newSearch;
     if (searchQueryInput.value !== newSearch) searchQueryInput.value = newSearch;
     if (currentOrdering.value !== newOrdering) currentOrdering.value = newOrdering;
     if (JSON.stringify(selectedFilters.value) !== JSON.stringify(newFiltersStateFromQuery)) {
-        selectedFilters.value = newFiltersStateFromQuery;
+      selectedFilters.value = newFiltersStateFromQuery;
     }
-    
+
 
     if (initialLoadDone || Object.keys(newQuery).length > 0) {
-        await fetchAdvertisements();
+      await fetchAdvertisements();
     } else if (!initialLoadDone && Object.keys(newQuery).length === 0) {
-        await fetchAdvertisements();
+      await fetchAdvertisements();
     }
   },
-  { deep: true, immediate: true } 
+  { deep: true, immediate: true }
 );
 
 
@@ -297,22 +297,22 @@ onMounted(async () => {
   await fetchFilterOptions();
 });
 
-const availableBreedsForFilter = computed(() => { 
-    if (!selectedFilters.value.species || !filterOptions.value.breeds.length) {
-        return [];
-    }
-    return filterOptions.value.breeds.filter(b => b.species_id === selectedFilters.value.species);
+const availableBreedsForFilter = computed(() => {
+  if (!selectedFilters.value.species || !filterOptions.value.breeds.length) {
+    return [];
+  }
+  return filterOptions.value.breeds.filter(b => b.species_id === selectedFilters.value.species);
 });
 
 watch(() => selectedFilters.value.species, (newSpeciesId, oldSpeciesId) => {
-    if (newSpeciesId !== oldSpeciesId && selectedFilters.value.breed !== null) {
-        const currentBreedIsValidForNewSpecies = availableBreedsForFilter.value.some(
-            (breed) => breed.id === selectedFilters.value.breed
-        );
-        if (!currentBreedIsValidForNewSpecies) {
-            selectedFilters.value.breed = null;
-        }
+  if (newSpeciesId !== oldSpeciesId && selectedFilters.value.breed !== null) {
+    const currentBreedIsValidForNewSpecies = availableBreedsForFilter.value.some(
+      (breed) => breed.id === selectedFilters.value.breed
+    );
+    if (!currentBreedIsValidForNewSpecies) {
+      selectedFilters.value.breed = null;
     }
+  }
 });
 
 const paginationNumbers = computed(() => {

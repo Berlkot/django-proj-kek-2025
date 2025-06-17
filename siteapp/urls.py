@@ -16,14 +16,18 @@ from .views_api import (
     AdvertisementRatingViewSet,
     ProfileViewSet,
     RoleListAPIView,
-    UserAdminViewSet
+    UserAdminViewSet,
 )
 
 router = DefaultRouter()
 router.register(r"advertisements", AdvertisementViewSet, basename="advertisement")
-router.register(r'advertisement-ratings', AdvertisementRatingViewSet, basename='advertisement-rating')
-router.register(r'profiles', ProfileViewSet, basename='profile')
-router.register(r'admin/users', UserAdminViewSet, basename='admin-user')
+router.register(
+    r"advertisement-ratings",
+    AdvertisementRatingViewSet,
+    basename="advertisement-rating",
+)
+router.register(r"profiles", ProfileViewSet, basename="profile")
+router.register(r"admin/users", UserAdminViewSet, basename="admin-user")
 
 urlpatterns = [
     path("", include(router.urls)),

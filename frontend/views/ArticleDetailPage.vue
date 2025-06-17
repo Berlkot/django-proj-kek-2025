@@ -5,10 +5,8 @@
     </div>
     <div v-else-if="error" class="container mx-auto px-4 py-10 text-center">
       <p class="text-xl text-red-500 bg-red-100 p-6 rounded-lg shadow">Ошибка: {{ error }}</p>
-      <router-link
-        :to="{ name: 'Articles' }"
-        class="mt-6 inline-block bg-green-500 text-white px-6 py-3 rounded-md hover:bg-green-600"
-      >
+      <router-link :to="{ name: 'Articles' }"
+        class="mt-6 inline-block bg-green-500 text-white px-6 py-3 rounded-md hover:bg-green-600">
         Ко всем статьям
       </router-link>
     </div>
@@ -16,44 +14,25 @@
     <div v-else-if="article" class="article-detail-page">
       <div class="container mx-auto max-w-3xl px-4 pt-8 md:pt-12">
 
-        <div
-          v-if="article.main_image_url"
-          class="mb-6 md:mb-8 rounded-lg overflow-hidden shadow-lg"
-        >
-          <img
-            :src="article.main_image_url"
-            :alt="article.title"
-            class="w-full h-auto object-cover"
-          />
+        <div v-if="article.main_image_url" class="mb-6 md:mb-8 rounded-lg overflow-hidden shadow-lg">
+          <img :src="article.main_image_url" :alt="article.title" class="w-full h-auto object-cover" />
         </div>
-        <div
-          v-else-if="!article.main_image_url && !loading"
-          class="mb-6 md:mb-8 h-[200px] bg-gray-200 flex items-center justify-center text-gray-500 rounded-lg"
-        >
+        <div v-else-if="!article.main_image_url && !loading"
+          class="mb-6 md:mb-8 h-[200px] bg-gray-200 flex items-center justify-center text-gray-500 rounded-lg">
           Изображение отсутствует
         </div>
 
-        <h1
-          class="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-800 mb-6 text-center md:text-left"
-        >
+        <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-800 mb-6 text-center md:text-left">
           {{ article.title }}
         </h1>
-        <div
-          class="mb-6 flex space-x-3"
-          v-if="authStore.isAuthenticated && article && canManageThisArticle"
-        >
-          <router-link
-            :to="{ name: 'ArticleEdit', params: { id: article.id } }"
-            class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
+        <div class="mb-6 flex space-x-3" v-if="authStore.isAuthenticated && article && canManageThisArticle">
+          <router-link :to="{ name: 'ArticleEdit', params: { id: article.id } }"
+            class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
             <font-awesome-icon :icon="['fas', 'pencil-alt']" class="mr-1.5 -ml-0.5 h-4 w-4" />
             Редактировать
           </router-link>
-          <button
-            @click="handleDeleteArticle"
-            :disabled="deletingArticle"
-            class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
-          >
+          <button @click="handleDeleteArticle" :disabled="deletingArticle"
+            class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50">
             <font-awesome-icon :icon="['fas', 'trash-alt']" class="mr-1.5 -ml-0.5 h-4 w-4" />
             {{ deletingArticle ? 'Удаление...' : 'Удалить статью' }}
           </button>
@@ -62,29 +41,16 @@
           Ошибка удаления: {{ deleteError }}
         </p>
         <div class="flex items-center mb-8 text-sm text-gray-600">
-          <img
-            v-if="article.author && article.author.avatar_url"
-            :src="article.author.avatar_url"
+          <img v-if="article.author && article.author.avatar_url" :src="article.author.avatar_url"
             :alt="article.author.display_name || 'Аватар автора'"
-            class="w-10 h-10 md:w-12 md:h-12 rounded-full mr-3 object-cover"
-          />
-          <img
-            v-else-if="article.author"
-            src="/static/images/no-image-data.png"
-            alt="Аватар по умолчанию"
-            class="w-10 h-10 md:w-12 md:h-12 rounded-full mr-3 object-cover bg-gray-200"
-          />
+            class="w-10 h-10 md:w-12 md:h-12 rounded-full mr-3 object-cover" />
+          <img v-else-if="article.author" src="/static/images/no-image-data.png" alt="Аватар по умолчанию"
+            class="w-10 h-10 md:w-12 md:h-12 rounded-full mr-3 object-cover bg-gray-200" />
           <div>
-            <p
-              v-if="article.author && article.author.display_name"
-              class="font-semibold text-gray-800"
-            >
+            <p v-if="article.author && article.author.display_name" class="font-semibold text-gray-800">
               {{ article.author.display_name }}
             </p>
-            <p
-              v-else-if="article.author && article.author.username"
-              class="font-semibold text-gray-800"
-            >
+            <p v-else-if="article.author && article.author.username" class="font-semibold text-gray-800">
               {{ article.author.username }}
             </p>
             <p v-else class="font-semibold text-gray-800">Автор неизвестен</p>
@@ -92,10 +58,8 @@
           </div>
         </div>
 
-        <div
-          class="prose prose-sm sm:prose-base lg:prose-lg max-w-none text-gray-700 leading-relaxed article-content"
-          v-html="article.content"
-        ></div>
+        <div class="prose prose-sm sm:prose-base lg:prose-lg max-w-none text-gray-700 leading-relaxed article-content"
+          v-html="article.content"></div>
 
 
         <div class="mt-10 mb-10 md:mt-16 pt-8 border-t border-gray-200">
@@ -103,17 +67,12 @@
             Комментарии ({{ article.comments ? article.comments.length : 0 }})
           </h2>
           <div v-if="article.comments && article.comments.length > 0" class="space-y-6">
-            <div
-              v-for="comment in article.comments"
-              :key="comment.id"
-              class="bg-white p-4 rounded-lg shadow-sm border relative group"
-            >
+            <div v-for="comment in article.comments" :key="comment.id"
+              class="bg-white p-4 rounded-lg shadow-sm border relative group">
               <div class="flex items-start space-x-4">
-                <img
-                  :src="comment.user.avatar_url || '/static/images/no-image-data.png'"
+                <img :src="comment.user.avatar_url || '/static/images/no-image-data.png'"
                   :alt="comment.user.display_name || 'Аватар комментатора'"
-                  class="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                />
+                  class="w-10 h-10 rounded-full object-cover flex-shrink-0" />
                 <div class="flex-grow">
                   <p class="font-semibold text-gray-900 text-sm">
                     {{ comment.user.display_name || comment.user.username }}
@@ -124,23 +83,15 @@
                   </p>
 
                   <div v-if="editingArticleCommentId === comment.id">
-                    <textarea
-                      v-model="editingArticleCommentText"
-                      rows="3"
-                      class="w-full p-2 border rounded-md focus:ring-green-500 focus:border-green-500 text-sm"
-                    ></textarea>
+                    <textarea v-model="editingArticleCommentText" rows="3"
+                      class="w-full p-2 border rounded-md focus:ring-green-500 focus:border-green-500 text-sm"></textarea>
                     <div class="mt-2 space-x-2">
-                      <button
-                        @click="saveEditedArticleComment(comment.id)"
-                        :disabled="articleCommentSubmitting"
-                        class="text-xs bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded disabled:opacity-50"
-                      >
+                      <button @click="saveEditedArticleComment(comment.id)" :disabled="articleCommentSubmitting"
+                        class="text-xs bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded disabled:opacity-50">
                         Сохранить
                       </button>
-                      <button
-                        @click="cancelEditArticleComment"
-                        class="text-xs bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded"
-                      >
+                      <button @click="cancelEditArticleComment"
+                        class="text-xs bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded">
                         Отмена
                       </button>
                     </div>
@@ -152,39 +103,26 @@
                 </div>
               </div>
 
-              <div
-                v-if="authStore.isAuthenticated && authStore.user"
-                class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1"
-              >
-                <button
-                  v-if="
-                    authStore.user.id === comment.user.id &&
-                    (authStore.user.role_permissions?.can_edit_own_comment ||
-                      authStore.user.is_staff)
-                  "
-                  @click="startEditArticleComment(comment)"
-                  title="Редактировать"
+              <div v-if="authStore.isAuthenticated && authStore.user"
+                class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
+                <button v-if="
+                  authStore.user.id === comment.user.id &&
+                  (authStore.user.role_permissions?.can_edit_own_comment ||
+                    authStore.user.is_staff)
+                " @click="startEditArticleComment(comment)" title="Редактировать"
                   class="p-1.5 text-xs text-blue-500 hover:text-blue-700 bg-blue-100 hover:bg-blue-200 rounded"
-                  :disabled="
-                    editingArticleCommentId !== null && editingArticleCommentId !== comment.id
-                  "
-                >
+                  :disabled="editingArticleCommentId !== null && editingArticleCommentId !== comment.id
+                    ">
                   <font-awesome-icon :icon="['fas', 'pencil-alt']" />
                 </button>
-                <button
-                  v-if="
-                    (authStore.user.id === comment.user.id &&
-                      authStore.user.role_permissions?.can_delete_own_comment) ||
-                    authStore.user.is_staff ||
-                    authStore.user.role_permissions?.can_delete_any_comment
-                  "
-                  @click="deleteArticleComment(comment.id)"
-                  title="Удалить"
-                  class="p-1.5 text-xs text-red-500 hover:text-red-700 bg-red-100 hover:bg-red-200 rounded"
-                  :disabled="
-                    editingArticleCommentId !== null && editingArticleCommentId !== comment.id
-                  "
-                >
+                <button v-if="
+                  (authStore.user.id === comment.user.id &&
+                    authStore.user.role_permissions?.can_delete_own_comment) ||
+                  authStore.user.is_staff ||
+                  authStore.user.role_permissions?.can_delete_any_comment
+                " @click="deleteArticleComment(comment.id)" title="Удалить"
+                  class="p-1.5 text-xs text-red-500 hover:text-red-700 bg-red-100 hover:bg-red-200 rounded" :disabled="editingArticleCommentId !== null && editingArticleCommentId !== comment.id
+                    ">
                   <font-awesome-icon :icon="['fas', 'trash-alt']" />
                 </button>
               </div>
@@ -196,17 +134,11 @@
           <div class="mt-8 pt-6 border-t border-gray-200">
             <h3 class="text-xl font-semibold text-gray-800 mb-3">Оставить комментарий</h3>
             <div v-if="authStore.isAuthenticated">
-              <textarea
-                v-model="newArticleCommentMessage"
-                rows="4"
-                placeholder="Ваш комментарий..."
-                class="w-full p-3 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
-              ></textarea>
-              <button
-                @click="submitArticleComment"
+              <textarea v-model="newArticleCommentMessage" rows="4" placeholder="Ваш комментарий..."
+                class="w-full p-3 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"></textarea>
+              <button @click="submitArticleComment"
                 :disabled="articleCommentSubmitting || !newArticleCommentMessage.trim()"
-                class="mt-3 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-5 rounded-md disabled:opacity-60 transition-colors"
-              >
+                class="mt-3 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-5 rounded-md disabled:opacity-60 transition-colors">
                 {{ articleCommentSubmitting ? 'Отправка...' : 'Отправить комментарий' }}
               </button>
               <p v-if="articleCommentError" class="text-red-600 text-sm mt-2">
@@ -216,17 +148,11 @@
             <div v-else>
               <p class="text-gray-700">
                 Чтобы оставить комментарий, пожалуйста,
-                <router-link
-                  :to="{ name: 'Login', query: { next: route.fullPath } }"
-                  class="text-green-600 hover:text-green-700 font-semibold hover:underline"
-                  >войдите</router-link
-                >
+                <router-link :to="{ name: 'Login', query: { next: route.fullPath } }"
+                  class="text-green-600 hover:text-green-700 font-semibold hover:underline">войдите</router-link>
                 или
-                <router-link
-                  :to="{ name: 'Register', query: { next: route.fullPath } }"
-                  class="text-green-600 hover:text-green-700 font-semibold hover:underline"
-                  >зарегистрируйтесь</router-link
-                >.
+                <router-link :to="{ name: 'Register', query: { next: route.fullPath } }"
+                  class="text-green-600 hover:text-green-700 font-semibold hover:underline">зарегистрируйтесь</router-link>.
               </p>
             </div>
           </div>
@@ -308,7 +234,6 @@ const formattedPublicationDate = computed(() => {
   return article.value ? formatDate(article.value.publication_date) : ''
 })
 
-// --- Логика CRUD для комментариев к статье ---
 const submitArticleComment = async () => {
   if (!newArticleCommentMessage.value.trim() || !article.value || !authStore.isAuthenticated) return
   articleCommentSubmitting.value = true
@@ -443,22 +368,25 @@ watch(
 </script>
 
 <style>
-
 .article-content h1,
 .article-content h2,
 .article-content h3,
 .article-content h4 {
   @apply font-bold text-gray-800 mb-4 mt-6;
 }
+
 .article-content h1 {
   @apply text-3xl sm:text-4xl;
 }
+
 .article-content h2 {
   @apply text-2xl sm:text-3xl;
 }
+
 .article-content h3 {
   @apply text-xl sm:text-2xl;
 }
+
 .article-content h4 {
   @apply text-lg sm:text-xl;
 }
@@ -475,9 +403,11 @@ watch(
 .article-content ol {
   @apply list-inside mb-4 pl-4;
 }
+
 .article-content ul {
   @apply list-disc;
 }
+
 .article-content ol {
   @apply list-decimal;
 }
